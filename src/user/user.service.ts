@@ -20,11 +20,6 @@ export class UserService {
     return this.userRepository.find();
   }
 
-  async createUser(userCreate: CreateUserDto): Promise<User> {
-    const user: User = this.userRepository.create(userCreate);
-    return this.userRepository.save(user);
-  }
-
   async updateUser(id: number, userUpdate: Partial<CreateUserDto>): Promise<User | null> {
     await this.userRepository.update(id, userUpdate);
     return this.userRepository.findOneBy({ id });

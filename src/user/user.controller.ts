@@ -1,6 +1,5 @@
-import { Body, Controller, Delete, Get, HttpException, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, Param, Patch } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('user')
@@ -17,11 +16,6 @@ export class UserController {
   @Get()
   async finUsersCtr() {
     return await this.userService.findUsers();
-  }
-
-  @Post('create')
-  async reateUserCtr(@Body() userCreate: CreateUserDto) {
-    return await this.userService.createUser(userCreate);
   }
 
   @Patch('update/:id')

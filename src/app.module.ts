@@ -7,6 +7,7 @@ import { User } from './user/entities/user.entity';
 import { ConfigModule } from '@nestjs/config';
 import { PostModule } from './post/post.module';
 import { Post } from './post/entities/post.entity';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { Post } from './post/entities/post.entity';
       synchronize: true,
     }),
     PostModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
