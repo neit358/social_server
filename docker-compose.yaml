@@ -14,16 +14,16 @@ services:
       PORTGRESQL_PORT: 5432
       PORTGRESQL_USER: postgres
       PORTGRESQL_PASSWORD: postgres
-      PORTGRESQL_DB: social
+      PORTGRESQL_DB: social_db
   postgres:
     image: postgres:latest
-    container_name: postgres_social_db
+    container_name: social_db
     ports:
       - '5432:5432'
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: social
+      POSTGRES_DB: social_db
     volumes:
       - pgdata:/var/lib/postgresql/data
 volumes:
