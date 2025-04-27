@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+  app:
+    image: node:20-alpine
+    command: sh -c "npm install && npm run start"
+    container_name: server_social
+    ports:
+      - '3001:3001'
+    working_dir: /app
+    volumes:
+      - ./.:/app
+    environment:
+      PORTGRESQL_HOST: postgres
+      PORTGRESQL_PORT: 5432
+      PORTGRESQL_USER: postgres
+      PORTGRESQL_PASSWORD: postgres
+      PORTGRESQL_DB: social
+  postgres:
+    image: postgres:latest
+    container_name: postgres_social_db
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: social
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
+    driver: local
