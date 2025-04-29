@@ -1,9 +1,9 @@
 import { IsString } from 'class-validator';
 
-export class CreateUserDto {
+export class LikeDto {
   @IsString()
-  name: string;
+  postId: string;
 
   @IsString()
-  password: string;
+  userId: string;
 }

@@ -18,7 +18,11 @@ export class AuthService {
   }
 
   async register(createUserDto: CreateUserDto): Promise<User | null> {
-    const user: User = this.userRepository.create(createUserDto);
-    return this.userRepository.save(user);
+    const user: User | null = await this.userRepository.findOne({
+      where: { name: createUserDto.name },
+    });
+    if (user) return null;
+    const userCreate: User = this.userRepository.create(createUserDto);
+    return this.userRepository.save(userCreate);
   }
 }
