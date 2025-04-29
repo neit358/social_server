@@ -11,6 +11,10 @@ export class LikeService {
     return await this.likeRepository.findOne({ where: { userId, postId } });
   }
 
+  getLikesByPostId(postId: string): Promise<Like[]> {
+    return this.likeRepository.find({ where: { postId } });
+  }
+
   async createLike(userId: string, postId: string): Promise<Like | null> {
     const liked = await this.findLike(userId, postId);
     if (liked) {

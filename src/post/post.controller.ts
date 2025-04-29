@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpException,
+  Param,
   Post,
   UploadedFile,
   UseInterceptors,
@@ -19,8 +20,8 @@ import { CreatePostDto } from './dto/create-post.dto';
 export class PostController {
   constructor(private readonly postService: PostService) {}
 
-  @Get('post')
-  async getPostByIdCtr(id: string) {
+  @Get('post/:id')
+  async getPostByIdCtr(@Param() id: string) {
     const post = await this.postService.findPostById(id);
     if (!post) throw new HttpException('Post not found', 404);
     return {
@@ -30,14 +31,14 @@ export class PostController {
     };
   }
 
-  @Get('post/:id')
+  @Get('')
   async getPostsCtr() {
     const posts = await this.postService.findPosts();
     if (!posts) throw new HttpException('Posts not found', 404);
     return {
       statusCode: 200,
       message: 'Posts found',
-      posts,
+      data: posts,
     };
   }
 
