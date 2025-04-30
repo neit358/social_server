@@ -10,7 +10,11 @@ export class UserController {
   async findUserByIdCtr(@Param() { id }: { id: string }) {
     const user = await this.userService.findUserById(id);
     if (!user) throw new HttpException('User not found', 404);
-    return user;
+    return {
+      statusCode: 200,
+      message: 'Get user successfully',
+      data: user,
+    };
   }
 
   @Get()

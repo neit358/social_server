@@ -1,5 +1,6 @@
-import { Controller, Delete, Get, HttpException, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpException, Param, Post } from '@nestjs/common';
 import { LikeService } from './like.service';
+import { LikeDto } from './dto/like.dto';
 
 @Controller('like')
 export class LikeController {
@@ -12,17 +13,17 @@ export class LikeController {
     return { statusCode: 200, message: 'Likes found', data: likes };
   }
 
-  @Post('create')
-  async createLike(userId: string, postId: string) {
-    const like = await this.likeService.createLike(userId, postId);
-    if (!like) throw new HttpException('Like already exists', 404);
-    return { statusCode: 200, message: 'Like created', data: like };
+  @Get(':postId/:userId')
+  async getLikeById(@Param('postId') postId: string, @Param('userId') userId: string) {
+    const like = await this.likeService.getLikeById(postId, userId);
+    if (!like) throw new HttpException('Like not found', 404);
+    return { statusCode: 200, message: 'Like found', data: like };
   }
 
-  @Delete('delete')
-  async deleteLike(userId: string, postId: string) {
-    const like = await this.likeService.deleteLIke(userId, postId);
-    if (!like) throw new HttpException('Like not found', 404);
-    return { statusCode: 200, message: 'Like deleted', data: like };
+  @Post('action/:id')
+  async actionLike(@Param('id') postId: string, @Body() body: LikeDto) {
+    const like = await this.likeService.actionLike(body.userId, postId);
+    if (!like) throw new HttpException('Like already exists', 404);
+    return { statusCode: 200, message: 'Like created', data: like };
   }
 }
