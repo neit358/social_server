@@ -1,33 +1,33 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpException,
   Param,
+  Patch,
   Post,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { v4 as uuidv4 } from 'uuid';
-import { extname } from 'path';
-import { diskStorage } from 'multer';
 
 import { PostService } from './post.service';
 import { CreatePostDto } from './dto/create-post.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
 
 @Controller('post')
 export class PostController {
   constructor(private readonly postService: PostService) {}
 
-  @Get('post/:id')
-  async getPostByIdCtr(@Param() id: string) {
+  @Get(':id')
+  async getPostByIdCtr(@Param('id') id: string) {
     const post = await this.postService.findPostById(id);
     if (!post) throw new HttpException('Post not found', 404);
     return {
       statusCode: 200,
       message: 'Post found',
-      post,
+      data: post,
     };
   }
 
@@ -42,18 +42,19 @@ export class PostController {
     };
   }
 
+  @Get('user/:id')
+  async getPostsByUserIdCtr(@Param('id') id: string) {
+    const posts = await this.postService.findPostsByUserId(id);
+    if (!posts) throw new HttpException('Posts not found', 404);
+    return {
+      statusCode: 200,
+      message: 'Posts found',
+      data: posts,
+    };
+  }
+
   @Post('create')
-  @UseInterceptors(
-    FileInterceptor('image', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) => {
-          const uniqueNameImage = uuidv4() + extname(file.originalname);
-          cb(null, uniqueNameImage);
-        },
-      }),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('image'))
   async createPostCtr(@UploadedFile() file: Express.Multer.File, @Body() body: CreatePostDto) {
     const image = file.path;
 
@@ -63,6 +64,38 @@ export class PostController {
       statusCode: 201,
       message: 'Post created',
       data: postCreate,
+    };
+  }
+
+  @Delete('delete/:id')
+  async deletePostCtr(@Param('id') id: string) {
+    const post = await this.postService.deletePost(id);
+    if (!post) throw new HttpException('Post not found', 404);
+    return {
+      statusCode: 200,
+      message: 'Post deleted',
+      data: post,
+    };
+  }
+
+  @Patch('update/:id')
+  @UseInterceptors(FileInterceptor('image'))
+  async updatePostCtr(
+    @UploadedFile() file: Express.Multer.File,
+    @Param('id') id: string,
+    @Body() body: UpdatePostDto,
+  ) {
+    const image = file.path;
+    const post = await this.postService.findPostById(id);
+    if (!post) throw new HttpException('Post not found', 404);
+
+    const postUpdate = await this.postService.updatePost(id, body, image);
+    if (!postUpdate) throw new HttpException('Post not updated', 404);
+
+    return {
+      statusCode: 200,
+      message: 'Post updated',
+      data: postUpdate,
     };
   }
 }
