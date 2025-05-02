@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Post } from './entities/post.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CreatePostDto } from './dto/create-post.dto';
 
 @Injectable()
@@ -25,10 +25,15 @@ export class PostService {
     return this.postRepository.find({ where: { userId } });
   }
 
-  async createPost(data: CreatePostDto, image: string): Promise<Post | null> {
-    const urlImage =
-      (process.env.HOST ?? 'http://localhost') + ':' + (process.env.PORT ?? '3001') + '/' + image;
-    const post = this.postRepository.create({ ...data, image: urlImage });
+  async findPostsBySearch(search: string): Promise<Post[]> {
+    return this.postRepository
+      .createQueryBuilder('post')
+      .where('post.title LIKE :search', { search: `%${search}%` })
+      .getMany();
+  }
+
+  async createPost(data: CreatePostDto): Promise<Post | null> {
+    const post = this.postRepository.create(data);
     return this.postRepository.save(post);
   }
 
@@ -41,14 +46,20 @@ export class PostService {
     return true;
   }
 
-  async updatePost(id: string, data: Partial<CreatePostDto>, image: string): Promise<Post | null> {
-    const urlImage =
-      (process.env.HOST ?? 'http://localhost') + ':' + (process.env.PORT ?? '3001') + '/' + image;
-    await this.postRepository.update(id, {
-      ...data,
-      image: urlImage,
-    });
+  async updatePost(id: string, data: Partial<CreatePostDto>): Promise<Post | null> {
+    await this.postRepository.update(id, data);
     return await this.findPostById(id);
+  }
+
+  async deletePosts(listIdPost: string[]): Promise<boolean | null> {
+    const posts = await this.postRepository.findBy({ id: In(listIdPost) });
+    if (!posts) {
+      return null;
+    }
+    await this.postRepository.delete({
+      id: In(listIdPost),
+    });
+    return true;
   }
 }
 

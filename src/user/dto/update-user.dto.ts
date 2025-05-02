@@ -3,5 +3,5 @@ import { IsString } from 'class-validator';
 
 export class UpdateUserDto extends CreateUserDto {
   @IsString()
-  image: string;
+  avatar: string;
 }
