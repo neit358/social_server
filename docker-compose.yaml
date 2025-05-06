@@ -1,5 +1,25 @@
-version: '3.8'
 services:
+  postgres:
+    image: postgres:latest
+    container_name: social_db
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: social_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis_cache:
+    image: redis:latest
+    container_name: social_redis
+    restart: always
+    ports:
+      - '6379:6379'
+    volumes:
+      - 'cache:/data'
+
   app:
     image: node:20-alpine
     command: sh -c "npm install && npm run start"
@@ -10,23 +30,45 @@ services:
     volumes:
       - ./.:/app
     environment:
-      POSTGRESQL_HOST: postgres
-      POSTGRESQL_PORT: 5432
-      POSTGRESQL_USER: postgres
-      POSTGRESQL_PASSWORD: postgres
-      POSTGRESQL_DB: social_db
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: social_db
+      REDIS_URL: redis://redis_cache:6379
+    depends_on:
+      - postgres
+      - redis_cache
 
-  postgres:
-    image: postgres:latest
-    container_name: social_db
-    ports:
-      - '5432:5432'
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+    container_name: social_elasticsearch
     environment:
-      POSTGRESQL_USER: postgres
-      POSTGRESQL_PASSWORD: postgres
-      POSTGRESQL_DB: social_db
+      - node.name=social_node
+      - cluster.name=social_cluster
+      - bootstrap.memory_lock=true
+      - discovery.type=single-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - '9200:9200'
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - esdata:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.10.0
+    container_name: social_kibana
+    ports:
+      - '5601:5601'
+    depends_on:
+      - elasticsearch
+
 volumes:
   pgdata:
+    driver: local
+  cache:
+    driver: local
+  esdata:
     driver: local
