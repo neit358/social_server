@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  HttpException,
   Param,
   Patch,
   Post,
@@ -13,8 +12,13 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 
 import { PostService } from './post.service';
-import { CreatePostDto } from './dto/create-post.dto';
-import { UpdatePostDto } from './dto/update-post.dto';
+import { ApiBody, ApiConsumes, ApiParam } from '@nestjs/swagger';
+import {
+  CreatePostDto,
+  CreatePostWithImageDto,
+  UpdatePostDto,
+  UpdatePostWithImageDto,
+} from './dto';
 
 @Controller('post')
 export class PostController {
@@ -22,78 +26,47 @@ export class PostController {
 
   @Get(':id')
   async getPostByIdCtr(@Param('id') id: string) {
-    const post = await this.postService.findPostById(id);
-    if (!post) throw new HttpException('Post not found', 404);
-    return {
-      statusCode: 200,
-      message: 'Post found',
-      data: post,
-    };
+    return await this.postService.findPostById(id);
   }
 
   @Get('')
   async getPostsCtr() {
-    const posts = await this.postService.findPosts();
-    if (!posts) throw new HttpException('Posts not found', 404);
-    return {
-      statusCode: 200,
-      message: 'Posts found',
-      data: posts,
-    };
+    return await this.postService.findPosts();
   }
 
   @Get('user/:id')
   async getPostsByUserIdCtr(@Param('id') id: string) {
-    const posts = await this.postService.findPostsByUserId(id);
-    if (!posts) throw new HttpException('Posts not found', 404);
-    return {
-      statusCode: 200,
-      message: 'Posts found',
-      data: posts,
-    };
+    return await this.postService.findPostsByUserId(id);
   }
 
   @Get('search/:search')
   async getPostsBySearchCtr(@Param('search') search: string) {
-    const posts = await this.postService.findPostsBySearch(search);
-    if (!posts) throw new HttpException('Posts not found', 404);
-    return {
-      statusCode: 200,
-      message: 'Posts found',
-      data: posts,
-    };
+    return await this.postService.findPostsBySearch(search);
   }
 
   @Post('create')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'Dữ liệu tạo bài viết',
+    type: CreatePostWithImageDto,
+  })
   @UseInterceptors(FileInterceptor('image'))
   async createPostCtr(@UploadedFile() file: Express.Multer.File, @Body() body: CreatePostDto) {
     const image = file?.path;
-    let urlImage: string | null = null;
-    if (image) {
-      urlImage =
-        (process.env.HOST ?? 'http://localhost') + ':' + (process.env.PORT ?? '3001') + '/' + image;
-    }
-    const postCreate = await this.postService.createPost({ ...body, image: urlImage || '' });
-    if (!postCreate) throw new HttpException('Post not created', 404);
-    return {
-      statusCode: 201,
-      message: 'Post created',
-      data: postCreate,
-    };
+    return await this.postService.createPost(image, body);
   }
 
   @Delete('delete/:id')
   async deletePostCtr(@Param('id') id: string) {
-    const post = await this.postService.deletePost(id);
-    if (!post) throw new HttpException('Post not found', 404);
-    return {
-      statusCode: 200,
-      message: 'Post deleted',
-      data: post,
-    };
+    return await this.postService.deletePost(id);
   }
 
   @Patch('update/:id')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'Dữ liệu cập nhật bài viết',
+    type: UpdatePostWithImageDto,
+  })
   @UseInterceptors(FileInterceptor('image'))
   async updatePostCtr(
     @UploadedFile() file: Express.Multer.File,
@@ -101,65 +74,50 @@ export class PostController {
     @Body() body: UpdatePostDto,
   ) {
     const image = file?.path;
-    const post = await this.postService.findPostById(id);
-    if (!post) throw new HttpException('Post not found', 404);
-
-    let urlImage: string | null = null;
-
-    if (image) {
-      urlImage =
-        (process.env.HOST ?? 'http://localhost') + ':' + (process.env.PORT ?? '3001') + '/' + image;
-    }
-    const postUpdate = await this.postService.updatePost(id, {
-      ...body,
-      image: urlImage || post.image,
-    });
-    if (!postUpdate) throw new HttpException('Post not updated', 404);
-
-    return {
-      statusCode: 200,
-      message: 'Post updated',
-      data: postUpdate,
-    };
+    return await this.postService.updatePost(id, body, image);
   }
 
   @Post('delete/list')
+  @ApiBody({
+    description: 'Dữ liệu xóa nhiều bài viết',
+    schema: {
+      type: 'object',
+      properties: {
+        listPostId: {
+          type: 'array',
+          items: { type: 'string' },
+        },
+      },
+    },
+  })
   async deletePostsCtr(
     @Body()
     body: {
       listPostId: string[];
     },
   ) {
-    const postsDeleted = await this.postService.deletePosts(body.listPostId);
-    if (!postsDeleted) throw new HttpException('Posts not found', 404);
-    return {
-      statusCode: 200,
-      message: 'Posts deleted',
-      data: postsDeleted,
-    };
+    return await this.postService.deletePosts(body.listPostId);
   }
 
   @Get('user/list/:id')
   async getUserLikedPostsByPostId(@Param('id') id: string) {
-    const posts = await this.postService.getUserLikedPostsByPostId(id);
-    if (!posts) throw new HttpException('Posts not found', 404);
-    return {
-      statusCode: 200,
-      message: 'Posts found',
-      data: posts,
-    };
+    return await this.postService.getUserLikedPostByPostId(id);
   }
 
   @Get('search/:index/:title')
+  @ApiParam({
+    name: 'title',
+    description: 'Title search in Elasticsearch',
+    required: true,
+  })
+  @ApiParam({
+    name: 'index',
+    description: 'Name index in Elasticsearch',
+    required: true,
+  })
   async getPostsByTitleByElasticsearch(
     @Param() { index, title }: { index: string; title: string },
   ) {
-    const result = await this.postService.getPostsByTitleByElasticsearch(index, title);
-    if (!result) throw new HttpException('Posts not found', 404);
-    return {
-      statusCode: 200,
-      message: 'Posts found',
-      data: result.hits.hits,
-    };
+    return await this.postService.getPostsByTitleByElasticsearch(index, title);
   }
 }

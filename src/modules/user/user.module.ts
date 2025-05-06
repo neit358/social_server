@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { User } from './entities/user.entity';
+import { UserRepository } from './user.repository';
 
 @Module({
   imports: [
@@ -23,6 +24,6 @@ import { User } from './entities/user.entity';
     }),
   ],
   controllers: [UserController],
-  providers: [UserService],
+  providers: [UserService, UserRepository],
 })
 export class UserModule {}

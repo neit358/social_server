@@ -1,6 +1,6 @@
 import { IsString } from 'class-validator';
 
-export class LikeDto {
+export class CreateLikeDto {
   @IsString()
   postId: string;
 

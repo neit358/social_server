@@ -5,3 +5,12 @@ export class UpdateUserDto extends CreateUserDto {
   @IsString()
   avatar: string;
 }
+
+export class UpdatePasswordUserDto {
+  @IsString()
+  oldPassword: string;
+  @IsString()
+  newPassword: string;
+  @IsString()
+  confirmPassword: string;
+}

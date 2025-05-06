@@ -1,5 +1,5 @@
-export interface UpdatePostDto {
-  title: string;
-  content: string;
+import { BasePostDto } from './base-post.dto';
+
+export class UpdatePostDto extends BasePostDto {
   image: string;
 }

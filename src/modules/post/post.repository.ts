@@ -4,7 +4,8 @@ import { In, Repository } from 'typeorm';
 import { SearchService } from 'src/services/elasticsearch.services';
 import { Post } from './entities/post.entity';
 import { CreatePostDto } from './dto/create-post.dto';
-import { ResponsePostElasticsearchDto } from './dto/reponse-post.dto';
+import { I_Base_Response, I_ResponseElasticsearch } from 'src/types/response.type';
+import { UpdatePostDto } from './dto';
 
 export class PostRepository {
   constructor(
@@ -31,7 +32,7 @@ export class PostRepository {
       .getMany();
   }
 
-  async createPost(data: CreatePostDto): Promise<Post | null> {
+  async createPost(data: CreatePostDto & UpdatePostDto): Promise<Post | null> {
     const post = this.postRepository.create(data);
     return await this.postRepository.save(post);
   }
@@ -41,7 +42,7 @@ export class PostRepository {
     return true;
   }
 
-  async updatePost(id: string, data: Partial<CreatePostDto>): Promise<Post | null> {
+  async updatePost(id: string, data: Partial<UpdatePostDto>): Promise<Post | null> {
     await this.postRepository.update(id, data);
     return await this.findPostById(id);
   }
@@ -58,25 +59,21 @@ export class PostRepository {
     return true;
   }
 
-  async getUserLikedPostsByPostId(postId: string): Promise<Post | null> {
+  async getUserLikedPostByPostId(postId: string): Promise<Post | null> {
     return await this.postRepository.findOne({
       where: { id: postId },
       relations: { likes: { user: true } },
     });
   }
 
-  async addPostToElasticsearch(index: string, data: Post): Promise<any> {
-    return await this.elasticsearchService.createIndex(index, data);
-  }
-
-  async createIndex(index: string, postCreated: Post): Promise<any> {
+  async createIndex(index: string, postCreated: Post): Promise<Partial<I_Base_Response>> {
     return await this.elasticsearchService.createIndex(index, postCreated);
   }
 
   async searchPostsByTitleByElasticsearch(
     index: string,
     query: Record<string, any>,
-  ): Promise<ResponsePostElasticsearchDto> {
+  ): Promise<I_ResponseElasticsearch<Post[]>> {
     return await this.elasticsearchService.search(index, query);
   }
 }

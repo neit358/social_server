@@ -1,46 +1,46 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
+import { LikeRepository } from './like.repository';
 import { Like } from './entities/like.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-
+import { I_Base_Response } from 'src/types/response.type';
 @Injectable()
 export class LikeService {
-  constructor(@InjectRepository(Like) private likeRepository: Repository<Like>) {}
+  constructor(private readonly likeRepository: LikeRepository) {}
 
-  async findLike(userId: string, postId: string): Promise<Like | null> {
-    return await this.likeRepository.findOne({ where: { userId, postId } });
-  }
-
-  async getLikeById(postId: string, userId: string): Promise<Like | null> {
-    return await this.likeRepository.findOne({ where: { postId, userId } });
-  }
-
-  async getLikesByPostId(postId: string): Promise<Like[]> {
-    return await this.likeRepository.find({ where: { postId } });
-  }
-
-  async actionLike(userId: string, postId: string): Promise<Like | boolean | null> {
-    const liked = await this.findLike(userId, postId);
-    if (liked) {
-      const response = await this.deleteLike(userId, postId);
-      return response;
-    }
-
-    const response = await this.createLike(userId, postId);
-    return response;
-  }
-
-  async deleteLike(userId: string, postId: string): Promise<boolean | null> {
+  async getLike(postId: string, userId: string): Promise<I_Base_Response<Like>> {
     try {
-      await this.likeRepository.delete({ userId, postId });
-      return true;
+      const like = await this.likeRepository.getLike(postId, userId);
+      console.log('like', like);
+      if (!like) throw new HttpException('Like not found', 404);
+      return { statusCode: 200, message: 'Like found', data: like };
     } catch {
-      return null;
+      throw new HttpException('Like not found', 404);
     }
   }
 
-  async createLike(userId: string, postId: string): Promise<Like | null> {
-    const likeCreate = this.likeRepository.create({ userId, postId });
-    return await this.likeRepository.save(likeCreate);
+  async getLikesByPostId(postId: string): Promise<I_Base_Response<Like[]>> {
+    try {
+      const likes = await this.likeRepository.getLikesByPostId(postId);
+      if (!likes) throw new HttpException('Likes not found', 404);
+      return { statusCode: 200, message: 'Likes found', data: likes };
+    } catch {
+      throw new HttpException('Likes not found', 404);
+    }
+  }
+
+  async actionLike(userId: string, postId: string): Promise<Partial<I_Base_Response<Like>>> {
+    try {
+      const liked = await this.getLike(userId, postId);
+      if (liked) {
+        await this.likeRepository.deleteLike(userId, postId);
+        return { statusCode: 200, message: 'Like deleted' };
+      }
+      const response = await this.likeRepository.createLike(userId, postId);
+      if (!response) {
+        throw new HttpException('Like not found', 404);
+      }
+      return { statusCode: 200, message: 'Like created', data: response };
+    } catch {
+      throw new HttpException('Like not found', 404);
+    }
   }
 }
