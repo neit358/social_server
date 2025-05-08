@@ -5,23 +5,25 @@ import { DeleteResult, Repository } from 'typeorm';
 import { Like } from './entities/like.entity';
 
 @Injectable()
-export class LikeRepository {
-  constructor(@InjectRepository(Like) private likeRepository: Repository<Like>) {}
+export class LikeRepository extends Repository<Like> {
+  constructor(@InjectRepository(Like) private likeRepository: Repository<Like>) {
+    super(likeRepository.target, likeRepository.manager, likeRepository.queryRunner);
+  }
 
   async getLike(postId: string, userId: string): Promise<Like | null> {
-    return await this.likeRepository.findOne({ where: { userId, postId } });
+    return await this.findOne({ where: { userId, postId } });
   }
 
   async getLikesByPostId(postId: string): Promise<Like[]> {
-    return await this.likeRepository.find({ where: { postId } });
+    return await this.find({ where: { postId } });
   }
 
-  async deleteLike(userId: string, postId: string): Promise<DeleteResult> {
-    return await this.likeRepository.delete({ userId, postId });
+  async deleteLike(postId: string, userId: string): Promise<DeleteResult> {
+    return await this.delete({ userId, postId });
   }
 
-  async createLike(userId: string, postId: string): Promise<Like | null> {
-    const likeCreate = this.likeRepository.create({ userId, postId });
-    return await this.likeRepository.save(likeCreate);
+  async createLike(postId: string, userId: string): Promise<Like | null> {
+    const likeCreate = this.create({ userId, postId });
+    return await this.save(likeCreate);
   }
 }

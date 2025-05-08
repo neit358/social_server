@@ -1,4 +1,4 @@
-import { Injectable, HttpException, BadRequestException } from '@nestjs/common';
+import { Injectable, HttpException } from '@nestjs/common';
 
 import { User } from './entities/user.entity';
 import { UserRepository } from './user.repository';
@@ -22,8 +22,8 @@ export class UserService {
         message: 'Get user successfully',
         data: user,
       };
-    } catch {
-      throw new BadRequestException('Find user error!');
+    } catch (error) {
+      throw new HttpException((error as Error).message, 404);
     }
   }
 
@@ -36,8 +36,8 @@ export class UserService {
         message: 'Get users successfully',
         data: users,
       };
-    } catch {
-      throw new BadRequestException('Find users error!');
+    } catch (error) {
+      throw new HttpException((error as Error).message, 404);
     }
   }
 
@@ -74,8 +74,8 @@ export class UserService {
         message: 'User updated successfully',
         data: userUpdated,
       };
-    } catch {
-      throw new BadRequestException('User update error!');
+    } catch (error) {
+      throw new HttpException((error as Error).message, 404);
     }
   }
 
@@ -102,8 +102,8 @@ export class UserService {
         message: 'User updated successfully',
         data: userWithoutPassword,
       };
-    } catch {
-      throw new BadRequestException('User update error!');
+    } catch (error) {
+      throw new HttpException((error as Error).message, 404);
     }
   }
 
@@ -112,8 +112,8 @@ export class UserService {
       const user = await this.userRepository.findUserById(id);
       if (!user) throw new HttpException('User not found', 404);
       await this.userRepository.deleteUser(id);
-    } catch {
-      throw new BadRequestException('Delete user error!');
+    } catch (error) {
+      throw new HttpException((error as Error).message, 404);
     }
   }
 }

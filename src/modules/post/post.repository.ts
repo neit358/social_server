@@ -1,79 +1,58 @@
-import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 
-import { SearchService } from 'src/services/elasticsearch.services';
 import { Post } from './entities/post.entity';
 import { CreatePostDto } from './dto/create-post.dto';
-import { I_Base_Response, I_ResponseElasticsearch } from 'src/types/response.type';
 import { UpdatePostDto } from './dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { I_find } from 'src/types/find.type';
 
-export class PostRepository {
-  constructor(
-    @InjectRepository(Post) private postRepository: Repository<Post>,
-    private readonly elasticsearchService: SearchService,
-  ) {}
-
-  async findPostById(id: string): Promise<Post | null> {
-    return await this.postRepository.findOneBy({ id });
+export class PostRepository extends Repository<Post> {
+  constructor(@InjectRepository(Post) private postRepository: Repository<Post>) {
+    super(postRepository.target, postRepository.manager, postRepository.queryRunner);
   }
 
-  async findPosts(): Promise<Post[]> {
-    return await this.postRepository.find();
+  async findPost(data: I_find): Promise<Post | null> {
+    return await this.findOne(data);
   }
 
-  async findPostsByUserId(userId: string): Promise<Post[]> {
-    return await this.postRepository.find({ where: { userId } });
+  async findPosts(data: I_find): Promise<Post[]> {
+    return await this.find(data);
   }
 
   async findPostsBySearch(search: string): Promise<Post[]> {
-    return await this.postRepository
-      .createQueryBuilder('post')
+    return await this.createQueryBuilder('post')
       .where('post.title LIKE :search', { search: `%${search}%` })
       .getMany();
   }
 
-  async createPost(data: CreatePostDto & UpdatePostDto): Promise<Post | null> {
-    const post = this.postRepository.create(data);
-    return await this.postRepository.save(post);
+  async createPost(data: CreatePostDto & UpdatePostDto): Promise<Post> {
+    const post = this.create(data);
+    return await this.save(post);
   }
 
-  async deletePost(id: string): Promise<boolean | null> {
-    await this.postRepository.delete(id);
-    return true;
+  async deletePost(id: string): Promise<void> {
+    await this.delete(id);
   }
 
-  async updatePost(id: string, data: Partial<UpdatePostDto>): Promise<Post | null> {
-    await this.postRepository.update(id, data);
-    return await this.findPostById(id);
+  async updatePost(id: string, data: Partial<UpdatePostDto>): Promise<void> {
+    await this.update(id, data);
   }
 
-  async deletePosts(listIdPost: string[]): Promise<boolean | null> {
-    const posts = await this.postRepository.findBy({ id: In(listIdPost) });
+  async deletePosts(listIdPost: string[]): Promise<void> {
+    const posts = await this.findBy({ id: In(listIdPost) });
     if (!posts) {
-      return null;
+      throw new Error('Posts not found');
     }
 
-    await this.postRepository.delete({
+    await this.delete({
       id: In(listIdPost),
     });
-    return true;
   }
 
   async getUserLikedPostByPostId(postId: string): Promise<Post | null> {
-    return await this.postRepository.findOne({
+    return await this.findOne({
       where: { id: postId },
       relations: { likes: { user: true } },
     });
-  }
-
-  async createIndex(index: string, postCreated: Post): Promise<Partial<I_Base_Response>> {
-    return await this.elasticsearchService.createIndex(index, postCreated);
-  }
-
-  async searchPostsByTitleByElasticsearch(
-    index: string,
-    query: Record<string, any>,
-  ): Promise<I_ResponseElasticsearch<Post[]>> {
-    return await this.elasticsearchService.search(index, query);
   }
 }

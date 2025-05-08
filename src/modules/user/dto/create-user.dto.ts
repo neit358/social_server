@@ -1,13 +1,12 @@
-import { IsEmail, IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsString } from 'class-validator';
+import { BaseUserDto } from './base-user.dto';
 
-export class CreateUserDto {
+export class CreateUserDto extends BaseUserDto {
   @IsString()
-  @IsEmail()
-  email: string;
-
-  @IsString()
-  name: string;
-
-  @IsString()
+  @ApiProperty({
+    description: 'Mật khẩu của người dùng',
+    example: '123456',
+  })
   password: string;
 }

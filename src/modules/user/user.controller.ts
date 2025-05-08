@@ -12,22 +12,28 @@ import { FileInterceptor } from '@nestjs/platform-express';
 
 import { UserService } from './user.service';
 import { UpdatePasswordUserDto, UpdateUserDto } from './dto';
+import { ApiBody, ApiConsumes } from '@nestjs/swagger';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
-
-  @Get(':id')
-  async findUserByIdCtr(@Param('id') id: string) {
-    return await this.userService.findUserById(id);
-  }
 
   @Get()
   async finUsersCtr() {
     return await this.userService.findUsers();
   }
 
+  @Get(':id')
+  async findUserByIdCtr(@Param('id') id: string) {
+    return await this.userService.findUserById(id);
+  }
+
   @Patch('update/:id')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    description: 'Dữ liệu cập nhật người dùng',
+    type: UpdateUserDto,
+  })
   @UseInterceptors(FileInterceptor('image'))
   async updateUserCtr(
     @Param('id') id: string,

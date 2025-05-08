@@ -3,25 +3,31 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateUserDto } from './dto';
 
 @Injectable()
-export class UserRepository {
-  constructor(@InjectRepository(User) private userRepository: Repository<User>) {}
+export class UserRepository extends Repository<User> {
+  constructor(@InjectRepository(User) private userRepository: Repository<User>) {
+    super(userRepository.target, userRepository.manager, userRepository.queryRunner);
+  }
 
   async findUserById(id: string): Promise<User | null> {
-    return await this.userRepository.findOneBy({ id });
+    return await this.findOneBy({ id });
   }
 
   async findUsers(): Promise<User[]> {
-    return this.userRepository.find();
+    return this.find();
   }
 
-  async updateUser(id: string, updateUser: Partial<UpdateUserDto>): Promise<User | null> {
-    await this.userRepository.update(id, updateUser);
-    return this.userRepository.findOneBy({ id });
+  async updateUser(
+    id: string,
+    updateUser: Partial<UpdateUserDto | CreateUserDto>,
+  ): Promise<User | null> {
+    await this.update(id, updateUser);
+    return this.findOneBy({ id });
   }
 
   async deleteUser(id: string): Promise<void> {
-    await this.userRepository.delete(id);
+    await this.delete(id);
   }
 }

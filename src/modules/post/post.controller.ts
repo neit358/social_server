@@ -6,16 +6,18 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 import { PostService } from './post.service';
-import { ApiBody, ApiConsumes, ApiParam } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes } from '@nestjs/swagger';
 import {
   CreatePostDto,
   CreatePostWithImageDto,
+  SearchPostDto,
   UpdatePostDto,
   UpdatePostWithImageDto,
 } from './dto';
@@ -24,19 +26,24 @@ import {
 export class PostController {
   constructor(private readonly postService: PostService) {}
 
-  @Get(':id')
-  async getPostByIdCtr(@Param('id') id: string) {
-    return await this.postService.findPostById(id);
-  }
-
   @Get('')
   async getPostsCtr() {
     return await this.postService.findPosts();
   }
 
+  @Get(':id')
+  async getPostByIdCtr(@Param('id') id: string) {
+    return await this.postService.findPostById(id);
+  }
+
   @Get('user/:id')
   async getPostsByUserIdCtr(@Param('id') id: string) {
     return await this.postService.findPostsByUserId(id);
+  }
+
+  @Get('search/elastic')
+  async getPostsByTitleByElasticsearch(@Query() { title }: SearchPostDto) {
+    return await this.postService.getPostsByTitleByElasticsearch(title);
   }
 
   @Get('search/:search')
@@ -85,7 +92,9 @@ export class PostController {
       properties: {
         listPostId: {
           type: 'array',
-          items: { type: 'string' },
+          items: {
+            type: 'string',
+          },
         },
       },
     },
@@ -102,22 +111,5 @@ export class PostController {
   @Get('user/list/:id')
   async getUserLikedPostsByPostId(@Param('id') id: string) {
     return await this.postService.getUserLikedPostByPostId(id);
-  }
-
-  @Get('search/:index/:title')
-  @ApiParam({
-    name: 'title',
-    description: 'Title search in Elasticsearch',
-    required: true,
-  })
-  @ApiParam({
-    name: 'index',
-    description: 'Name index in Elasticsearch',
-    required: true,
-  })
-  async getPostsByTitleByElasticsearch(
-    @Param() { index, title }: { index: string; title: string },
-  ) {
-    return await this.postService.getPostsByTitleByElasticsearch(index, title);
   }
 }

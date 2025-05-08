@@ -10,6 +10,8 @@ import { PostController } from './post.controller';
 import { Post } from './entities/post.entity';
 import { ElasticsearchModule } from 'src/configs/elasticsearch.config';
 import { PostRepository } from './post.repository';
+import { RedisService } from 'src/services/redis.service';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
@@ -24,8 +26,10 @@ import { PostRepository } from './post.repository';
       }),
     }),
     ElasticsearchModule,
+    UserModule,
   ],
   controllers: [PostController],
-  providers: [PostService, PostRepository],
+  providers: [PostService, PostRepository, RedisService],
+  exports: [PostService],
 })
 export class PostModule {}

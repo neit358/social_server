@@ -4,9 +4,11 @@ import { LikeController } from './like.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Like } from './entities/like.entity';
 import { LikeRepository } from './like.repository';
+import { UserModule } from '../user/user.module';
+import { PostModule } from '../post/post.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Like])],
+  imports: [TypeOrmModule.forFeature([Like]), UserModule, PostModule],
   controllers: [LikeController],
   providers: [LikeService, LikeRepository],
 })

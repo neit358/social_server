@@ -16,10 +16,10 @@ export class AuthService {
     private readonly redisService: RedisService,
   ) {}
 
-  async register(key: string): Promise<Partial<I_Base_Response>> {
+  async register(key: string, seconds: number): Promise<Partial<I_Base_Response>> {
     try {
       const user: User | null = await this.userRepository.findOne({
-        where: { name: key },
+        where: { email: key },
       });
       if (user) throw new HttpException('User already exists', 400);
       const code = otpGenerator.generate(6, {
@@ -28,14 +28,15 @@ export class AuthService {
         lowerCaseAlphabets: false,
         specialChars: false,
       });
-      await this.redisService.set(key, code);
+
+      await this.redisService.set(key, code, seconds);
 
       return {
         statusCode: 200,
         message: 'Send otp successfully',
       };
-    } catch {
-      throw new HttpException('Send otp error!', 400);
+    } catch (error) {
+      throw new HttpException((error as Error).message, 404);
     }
   }
 
@@ -58,21 +59,25 @@ export class AuthService {
         message: 'User created successfully',
         data: user,
       };
-    } catch {
-      throw new HttpException('Verify error!', 400);
+    } catch (error) {
+      throw new HttpException((error as Error).message, 404);
     }
   }
 
   async login(email: string, passwordLogin: string): Promise<I_Base_Response<Partial<User>>> {
-    const user: User | null = await this.userRepository.findOne({
-      where: { email, password: passwordLogin },
-    });
-    if (!user) throw new HttpException('Login error!', 404);
-    const userWithoutPassword = omit(user, ['password']);
-    return {
-      statusCode: 200,
-      message: 'Login successfully',
-      data: userWithoutPassword,
-    };
+    try {
+      const user: User | null = await this.userRepository.findOne({
+        where: { email, password: passwordLogin },
+      });
+      if (!user) throw new HttpException('Login error!', 404);
+      const userWithoutPassword = omit(user, ['password']);
+      return {
+        statusCode: 200,
+        message: 'Login successfully',
+        data: userWithoutPassword,
+      };
+    } catch (error) {
+      throw new HttpException((error as Error).message, 404);
+    }
   }
 }

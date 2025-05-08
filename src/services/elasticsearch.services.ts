@@ -8,8 +8,8 @@ import { I_Base_Response, I_ResponseElasticsearch } from 'src/types/response.typ
 export class SearchService {
   constructor(private readonly elasticsearchService: ElasticsearchService) {}
 
-  async createIndex(index: string, data: Post): Promise<Partial<I_Base_Response>> {
-    const result = await this.elasticsearchService.index({
+  async createIndex(index: string, data: Post): Promise<void> {
+    await this.elasticsearchService.index({
       index,
       id: data.id,
       body: {
@@ -19,19 +19,46 @@ export class SearchService {
         userId: data.userId,
       },
     });
-    return {
-      statusCode: result.statusCode || 200,
-    };
   }
 
-  async search(
-    index: string,
-    query: Record<string, any>,
-  ): Promise<I_ResponseElasticsearch<Post[]>> {
+  async updateIndex(index: string, id: string, data: Partial<Post>): Promise<void> {
+    await this.elasticsearchService.update({
+      index,
+      id,
+      body: {
+        doc: data,
+      },
+    });
+  }
+
+  async deleteIndex(index: string, id: string): Promise<void> {
+    await this.elasticsearchService.delete({
+      index,
+      id,
+    });
+  }
+
+  async search(index: string, query: Record<string, any>): Promise<I_ResponseElasticsearch<Post>> {
     const result = await this.elasticsearchService.search({
       index,
       body: query,
     });
     return result;
+  }
+
+  async getPostById(index: string, id: string): Promise<Partial<I_Base_Response<Post>> | null> {
+    try {
+      const result = await this.elasticsearchService.get({
+        index,
+        id,
+      });
+      return {
+        statusCode: result.statusCode || 200,
+        message: result.body.found ? 'Post found' : 'Post not found',
+        data: result.body._source as Post,
+      };
+    } catch {
+      return null;
+    }
   }
 }
