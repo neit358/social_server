@@ -14,13 +14,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 
 import { PostService } from './post.service';
 import { ApiBody, ApiConsumes } from '@nestjs/swagger';
-import {
-  CreatePostDto,
-  CreatePostWithImageDto,
-  SearchPostDto,
-  UpdatePostDto,
-  UpdatePostWithImageDto,
-} from './dto';
+import { CreatePostDto, SearchPostDto, UpdatePostDto } from './dto';
 
 @Controller('post')
 export class PostController {
@@ -53,10 +47,6 @@ export class PostController {
 
   @Post('create')
   @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    description: 'Dữ liệu tạo bài viết',
-    type: CreatePostWithImageDto,
-  })
   @UseInterceptors(FileInterceptor('image'))
   async createPostCtr(@UploadedFile() file: Express.Multer.File, @Body() body: CreatePostDto) {
     const image = file?.path;
@@ -70,10 +60,6 @@ export class PostController {
 
   @Patch('update/:id')
   @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    description: 'Dữ liệu cập nhật bài viết',
-    type: UpdatePostWithImageDto,
-  })
   @UseInterceptors(FileInterceptor('image'))
   async updatePostCtr(
     @UploadedFile() file: Express.Multer.File,
@@ -81,7 +67,7 @@ export class PostController {
     @Body() body: UpdatePostDto,
   ) {
     const image = file?.path;
-    return await this.postService.updatePost(id, body, image);
+    return await this.postService.updatePost(id, { ...body, image });
   }
 
   @Post('delete/list')

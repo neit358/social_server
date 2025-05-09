@@ -1,10 +1,10 @@
 import { In, Repository } from 'typeorm';
 
 import { Post } from './entities/post.entity';
-import { CreatePostDto } from './dto/create-post.dto';
-import { UpdatePostDto } from './dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { I_find } from 'src/types/find.type';
+import { I_find } from 'src/interfaces/find.interfaces';
+import { I_UpdatePost } from './interfaces/create.interface';
+import { I_CreatePost } from './interfaces/update.interface';
 
 export class PostRepository extends Repository<Post> {
   constructor(@InjectRepository(Post) private postRepository: Repository<Post>) {
@@ -25,7 +25,7 @@ export class PostRepository extends Repository<Post> {
       .getMany();
   }
 
-  async createPost(data: CreatePostDto & UpdatePostDto): Promise<Post> {
+  async createPost(data: I_CreatePost): Promise<Post> {
     const post = this.create(data);
     return await this.save(post);
   }
@@ -34,7 +34,7 @@ export class PostRepository extends Repository<Post> {
     await this.delete(id);
   }
 
-  async updatePost(id: string, data: Partial<UpdatePostDto>): Promise<void> {
+  async updatePost(id: string, data: I_UpdatePost): Promise<void> {
     await this.update(id, data);
   }
 

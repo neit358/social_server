@@ -1,10 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
-import { BaseUserDto } from './base-user.dto';
 
-export class UpdateUserDto extends BaseUserDto {
+export class UpdateUserDto {
   @IsString()
-  avatar: string;
+  @ApiProperty({
+    description: 'Tên của người dùng',
+    example: 'Nguyen Van A',
+  })
+  name: string;
 
   @ApiProperty({
     description: 'Hình ảnh đại diện của người dùng',
@@ -12,7 +15,7 @@ export class UpdateUserDto extends BaseUserDto {
     format: 'binary',
     required: false,
   })
-  image: Express.Multer.File;
+  avatar: Express.Multer.File;
 }
 
 export class UpdatePasswordUserDto {
@@ -24,7 +27,7 @@ export class UpdatePasswordUserDto {
     example: 'Aa123456',
     required: true,
   })
-  oldPassword: string;
+  oldPassword?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -34,7 +37,7 @@ export class UpdatePasswordUserDto {
     example: 'Bb123456',
     required: true,
   })
-  newPassword: string;
+  newPassword?: string;
 
   @IsString()
   @IsNotEmpty()

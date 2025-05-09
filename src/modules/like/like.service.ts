@@ -2,11 +2,11 @@ import { HttpException, Injectable } from '@nestjs/common';
 
 import { LikeRepository } from './like.repository';
 import { Like } from './entities/like.entity';
-import { I_Base_Response } from 'src/types/response.type';
 import { BaseLikeDto } from './dto';
 import { LikeResponseDto } from './dto/response.dto';
 import { PostService } from '../post/post.service';
 import { UserService } from '../user/user.service';
+import { I_Base_Response } from 'src/interfaces/response.interfaces';
 @Injectable()
 export class LikeService {
   constructor(

@@ -3,8 +3,8 @@ import { Injectable, HttpException } from '@nestjs/common';
 import { User } from './entities/user.entity';
 import { UserRepository } from './user.repository';
 import { UpdatePasswordUserDto, UpdateUserDto } from './dto/update-user.dto';
-import { I_Base_Response } from 'src/types/response.type';
 import { omit } from 'lodash';
+import { I_Base_Response } from 'src/interfaces/response.interfaces';
 
 @Injectable()
 export class UserService {
@@ -12,7 +12,10 @@ export class UserService {
 
   async findUserById(id: string): Promise<I_Base_Response<User>> {
     try {
-      const user = await this.userRepository.findUserById(id);
+      const user = await this.userRepository.findUser({
+        where: { id },
+      });
+
       if (!user) {
         throw new HttpException('User not found', 404);
       }
@@ -43,29 +46,32 @@ export class UserService {
 
   async updateUser(
     id: string,
-    updateUser: Partial<UpdateUserDto>,
-    image?: string,
+    updateUser: UpdateUserDto,
+    avatar?: string,
   ): Promise<I_Base_Response<User>> {
     try {
-      const userExists = await this.userRepository.findUserById(id);
-      if (!userExists) {
+      const user = await this.userRepository.findUser({
+        where: { id },
+      });
+
+      if (!user) {
         throw new HttpException('User not found', 404);
       }
 
-      let urlImage: string | null = null;
+      let urlAvatar: string | null = null;
 
-      if (image) {
-        urlImage =
+      if (avatar) {
+        urlAvatar =
           (process.env.HOST ?? 'http://localhost') +
           ':' +
           (process.env.PORT ?? '3001') +
           '/' +
-          image;
+          avatar;
       }
 
       const userUpdated = await this.userRepository.updateUser(id, {
         ...updateUser,
-        avatar: urlImage || userExists.avatar,
+        avatar: urlAvatar || user.avatar,
       });
 
       if (!userUpdated) throw new HttpException('User update error!', 404);
@@ -85,7 +91,9 @@ export class UserService {
   ): Promise<I_Base_Response<Partial<User>>> {
     try {
       const { oldPassword, newPassword, confirmPassword } = data;
-      const user: User | null = await this.userRepository.findUserById(id);
+      const user: User | null = await this.userRepository.findUser({
+        where: { id },
+      });
       if (!user) throw new HttpException('User not found', 404);
       if (user.password !== oldPassword) throw new HttpException('Old password is incorrect', 400);
       if (newPassword !== confirmPassword)
@@ -109,7 +117,9 @@ export class UserService {
 
   async deleteUser(id: string): Promise<void> {
     try {
-      const user = await this.userRepository.findUserById(id);
+      const user = await this.userRepository.exists({
+        where: { id },
+      });
       if (!user) throw new HttpException('User not found', 404);
       await this.userRepository.deleteUser(id);
     } catch (error) {

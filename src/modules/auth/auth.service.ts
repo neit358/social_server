@@ -1,20 +1,37 @@
 import { HttpException, Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import * as otpGenerator from 'otp-generator';
+import * as bcrypt from 'bcryptjs';
+import { Request, Response } from 'express';
 
-import { CreateUserDto } from '../user/dto/create-user.dto';
+import { omit } from 'lodash';
+import { JwtService } from '@nestjs/jwt';
 import { User } from '../user/entities/user.entity';
 import { RedisService } from 'src/services/redis.service';
-import { omit } from 'lodash';
-import { I_Base_Response } from 'src/types/response.type';
+import { CreateUserDto } from '../user/dto/create-user.dto';
+import { I_Base_Response } from 'src/interfaces/response.interfaces';
+import { I_BaseResponseAuth, I_ResponseLogin } from './interfaces/response.interface';
+import { UserRepository } from '../user/user.repository';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User) private userRepository: Repository<User>,
+    private readonly userRepository: UserRepository,
     private readonly redisService: RedisService,
+    private readonly jwtService: JwtService,
   ) {}
+
+  signToken = (user: I_BaseResponseAuth, secret: string, expiresIn: string): string =>
+    this.jwtService.sign(
+      {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      },
+      {
+        secret,
+        expiresIn,
+      },
+    );
 
   async register(key: string, seconds: number): Promise<Partial<I_Base_Response>> {
     try {
@@ -44,32 +61,60 @@ export class AuthService {
     key: string,
     code: string,
     createUserDto: CreateUserDto,
-  ): Promise<I_Base_Response<User>> {
+  ): Promise<I_Base_Response<I_BaseResponseAuth>> {
     try {
       const codeRedis = await this.redisService.get(key);
       if (!codeRedis) throw new HttpException('OTP not found', 404);
       if (codeRedis !== code) throw new HttpException('OTP not found', 404);
       const codeDel = await this.redisService.del(key);
       if (!codeDel) throw new HttpException('OTP not found', 404);
-      const userCreate: User = this.userRepository.create(createUserDto);
+
+      const hashedPassword = await this.hashPassword(createUserDto.password);
+      const userCreate: User = this.userRepository.create({
+        ...createUserDto,
+        password: hashedPassword,
+      });
+
       const user = await this.userRepository.save(userCreate);
       if (!user) throw new HttpException('OTP incorrect!', 401);
+
+      const userWithoutPassword = omit(user, ['password']);
+
       return {
         statusCode: 200,
         message: 'User created successfully',
-        data: user,
+        data: userWithoutPassword,
       };
     } catch (error) {
       throw new HttpException((error as Error).message, 404);
     }
   }
 
-  async login(email: string, passwordLogin: string): Promise<I_Base_Response<Partial<User>>> {
+  async login(
+    email: string,
+    password: string,
+    response: Response,
+  ): Promise<I_Base_Response<Partial<I_ResponseLogin>>> {
     try {
       const user: User | null = await this.userRepository.findOne({
-        where: { email, password: passwordLogin },
+        where: { email },
       });
+
       if (!user) throw new HttpException('Login error!', 404);
+
+      const isPasswordValid = await this.comparePassword(password, user.password);
+      if (!isPasswordValid) throw new HttpException('Password incorrect!', 404);
+
+      this.createAndSendToken(
+        {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          avatar: user.avatar,
+        },
+        response,
+      );
+
       const userWithoutPassword = omit(user, ['password']);
       return {
         statusCode: 200,
@@ -79,5 +124,78 @@ export class AuthService {
     } catch (error) {
       throw new HttpException((error as Error).message, 404);
     }
+  }
+
+  async hashPassword(password: string): Promise<string> {
+    const salt = await bcrypt.genSalt(10);
+    return await bcrypt.hash(password, salt);
+  }
+
+  async comparePassword(password: string, hash: string): Promise<boolean> {
+    return await bcrypt.compare(password, hash);
+  }
+
+  logout(response: Response): Partial<I_Base_Response> {
+    try {
+      response.clearCookie('refreshToken');
+      response.clearCookie('accessToken');
+      return {
+        statusCode: 200,
+        message: 'Logout successfully',
+      };
+    } catch (error) {
+      throw new HttpException((error as Error).message, 404);
+    }
+  }
+
+  refreshToken(request: Request, response: Response): Partial<I_Base_Response> {
+    try {
+      const refreshToken = request.cookies['refreshToken'] as string;
+      if (!refreshToken) throw new HttpException('Token not found', 401);
+
+      const user = this.jwtService.verify<I_BaseResponseAuth>(refreshToken, {
+        secret: process.env.JWT_REFRESH_TOKEN || 'jwt_refresh_token',
+      });
+
+      if (!user) throw new HttpException('Token expired', 401);
+
+      response.clearCookie('refreshToken');
+      response.clearCookie('accessToken');
+
+      this.createAndSendToken(user, response);
+      return {
+        statusCode: 200,
+        message: 'Refresh token successfully',
+      };
+    } catch (error) {
+      throw new HttpException((error as Error).message, 401);
+    }
+  }
+
+  createAndSendToken(user: I_BaseResponseAuth, response: Response): void {
+    const accessToken = this.signToken(
+      user,
+      process.env.JWT_ACCESS_TOKEN || 'jwt_access_token',
+      '1m',
+    );
+    const refreshToken = this.signToken(
+      user,
+      process.env.JWT_REFRESH_TOKEN || 'jwt_refresh_token',
+      '7d',
+    );
+
+    response.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // If true only send cookie over HTTPS
+      sameSite: 'strict', // Block sending cookies cross-site
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    response.cookie('accessToken', accessToken, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
   }
 }

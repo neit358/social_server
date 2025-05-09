@@ -34,14 +34,14 @@ export class UserController {
     description: 'Dữ liệu cập nhật người dùng',
     type: UpdateUserDto,
   })
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FileInterceptor('avatar'))
   async updateUserCtr(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
     @Body() updateUser: UpdateUserDto,
   ) {
-    const image = file?.path;
-    return await this.userService.updateUser(id, updateUser, image);
+    const avatar = file?.path;
+    return await this.userService.updateUser(id, updateUser, avatar);
   }
 
   @Delete('delete/:id')

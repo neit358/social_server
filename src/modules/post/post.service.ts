@@ -3,11 +3,11 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { PostRepository } from './post.repository';
 import { Post } from './entities/post.entity';
 import { CreatePostDto } from './dto/create-post.dto';
-import { BasePostDto } from './dto';
-import { I_Base_Response } from 'src/types/response.type';
 import { RedisService } from 'src/services/redis.service';
-import { SearchService } from 'src/services/elasticsearch.services';
+import { SearchService } from 'src/services/elasticsearch.service';
 import { UserService } from '../user/user.service';
+import { I_Base_Response } from 'src/interfaces/response.interfaces';
+import { I_UpdatePost } from './interfaces/create.interface';
 
 @Injectable()
 export class PostService {
@@ -126,11 +126,7 @@ export class PostService {
     }
   }
 
-  async updatePost(
-    id: string,
-    body: BasePostDto,
-    image: string,
-  ): Promise<Partial<I_Base_Response>> {
+  async updatePost(id: string, body: I_UpdatePost): Promise<Partial<I_Base_Response>> {
     try {
       const post = await this.postRepository.findPost({
         where: {
@@ -144,13 +140,13 @@ export class PostService {
 
       let urlImage: string | null = null;
 
-      if (image) {
+      if (body.image) {
         urlImage =
           (process.env.HOST ?? 'http://localhost') +
           ':' +
           (process.env.PORT ?? '3001') +
           '/' +
-          image;
+          body.image;
       }
 
       const dataUpdate = {
