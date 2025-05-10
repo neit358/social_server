@@ -35,7 +35,7 @@ export class AuthController {
   @ApiBasicAuth()
   @UseGuards(AuthGuard)
   logout(@Res({ passthrough: true }) response: Response) {
-    this.authService.logout(response);
+    return this.authService.logout(response);
   }
 
   @Get('refresh')

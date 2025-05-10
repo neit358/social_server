@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 
 import { LikeService } from './like.service';
 import { BaseLikeDto } from './dto';
@@ -17,7 +17,7 @@ export class LikeController {
     return await this.likeService.getLike({ postId, userId });
   }
 
-  @Post('action/:postId/:userId')
+  @Get('action/:postId/:userId')
   async actionLike(@Param() { postId, userId }: BaseLikeDto) {
     return await this.likeService.actionLike({
       postId,
