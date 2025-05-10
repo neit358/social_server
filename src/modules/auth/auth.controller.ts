@@ -46,4 +46,13 @@ export class AuthController {
   ) {
     return this.authService.refreshToken(request, response);
   }
+
+  @Get('check')
+  checkAuth(
+    @Req()
+    request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return this.authService.checkAuth(request, response);
+  }
 }

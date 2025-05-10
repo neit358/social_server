@@ -15,6 +15,16 @@ export class LikeService {
     private userService: UserService,
   ) {}
 
+  async getLikesByPostId(postId: string): Promise<I_Base_Response<Like[]>> {
+    try {
+      const likes = await this.likeRepository.getLikesByPostId(postId);
+      if (!likes) throw new HttpException('Likes not found', 404);
+      return { statusCode: 200, message: 'Likes found', data: likes };
+    } catch (error) {
+      throw new HttpException((error as Error).message, 404);
+    }
+  }
+
   async getLike({ postId, userId }: BaseLikeDto): Promise<I_Base_Response<LikeResponseDto>> {
     try {
       const like = await this.likeRepository.getLike(postId, userId);
@@ -38,21 +48,12 @@ export class LikeService {
     }
   }
 
-  async getLikesByPostId(postId: string): Promise<I_Base_Response<Like[]>> {
-    try {
-      const likes = await this.likeRepository.getLikesByPostId(postId);
-      if (!likes) throw new HttpException('Likes not found', 404);
-      return { statusCode: 200, message: 'Likes found', data: likes };
-    } catch (error) {
-      throw new HttpException((error as Error).message, 404);
-    }
-  }
-
   async actionLike({
     postId,
     userId,
   }: BaseLikeDto): Promise<Partial<I_Base_Response<LikeResponseDto>>> {
     try {
+      console.log('actionLike', postId, userId);
       const post = await this.postService.findPostById(postId);
       if (!post) throw new HttpException('Post not found', 404);
 

@@ -6,6 +6,7 @@ import { User } from '../user/entities/user.entity';
 import { RedisService } from 'src/services/redis.service';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { JwtModule } from '@nestjs/jwt';
         secret: process.env.JWT_ACCESS_TOKEN,
       }),
     }),
+    UserModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, RedisService],

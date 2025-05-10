@@ -198,4 +198,45 @@ export class AuthService {
       maxAge: 24 * 60 * 60 * 1000,
     });
   }
+
+  checkAuth(request: Request, response: Response) {
+    try {
+      const accessToken = request.cookies['accessToken'] as string;
+      if (!accessToken) throw new HttpException('Token not found', 401);
+
+      const user = this.jwtService.verify<I_BaseResponseAuth>(accessToken, {
+        secret: process.env.JWT_ACCESS_TOKEN || 'jwt_access_token',
+      });
+
+      if (!user) {
+        const refreshToken = request.cookies['refreshToken'] as string;
+        if (!refreshToken) throw new HttpException('Token not found', 401);
+
+        const user = this.jwtService.verify<I_BaseResponseAuth>(refreshToken, {
+          secret: process.env.JWT_REFRESH_TOKEN || 'jwt_refresh_token',
+        });
+        if (!user) {
+          response.clearCookie('refreshToken');
+          response.clearCookie('accessToken');
+          throw new HttpException('Token expired', 401);
+        }
+
+        this.createAndSendToken(user, response);
+
+        return {
+          statusCode: 200,
+          message: 'Check auth successfully',
+          data: user,
+        };
+      }
+
+      return {
+        statusCode: 200,
+        message: 'Check auth successfully',
+        data: user,
+      };
+    } catch {
+      throw new HttpException('Token expired', 401);
+    }
+  }
 }

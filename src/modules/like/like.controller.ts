@@ -17,11 +17,11 @@ export class LikeController {
     return await this.likeService.getLike({ postId, userId });
   }
 
-  @Post('action/:id')
-  async actionLike(@Param('id') postId: string, @Body() body: BaseLikeDto) {
+  @Post('action/:postId/:userId')
+  async actionLike(@Param() { postId, userId }: BaseLikeDto) {
     return await this.likeService.actionLike({
       postId,
-      userId: body.userId,
+      userId,
     });
   }
 }
