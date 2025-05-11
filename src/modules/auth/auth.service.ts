@@ -35,7 +35,7 @@ export class AuthService {
 
   async register(key: string, seconds: number): Promise<Partial<I_Base_Response>> {
     try {
-      const user: User | null = await this.userRepository.findOne({
+      const user: User | null = await this.userRepository.findByCondition({
         where: { email: key },
       });
       if (user) throw new HttpException('User already exists', 400);
@@ -70,12 +70,12 @@ export class AuthService {
       if (!codeDel) throw new HttpException('OTP not found', 404);
 
       const hashedPassword = await this.hashPassword(createUserDto.password);
-      const userCreate: User = this.userRepository.create({
+      const userCreate: User = this.userRepository.createOne({
         ...createUserDto,
         password: hashedPassword,
       });
 
-      const user = await this.userRepository.save(userCreate);
+      const user = await this.userRepository.saveOne(userCreate);
       if (!user) throw new HttpException('OTP incorrect!', 401);
 
       const userWithoutPassword = omit(user, ['password']);
@@ -96,7 +96,7 @@ export class AuthService {
     response: Response,
   ): Promise<I_Base_Response<Partial<I_ResponseLogin>>> {
     try {
-      const user: User | null = await this.userRepository.findOne({
+      const user: User | null = await this.userRepository.findByCondition({
         where: { email },
       });
 
@@ -137,8 +137,7 @@ export class AuthService {
 
   logout(response: Response): Partial<I_Base_Response> {
     try {
-      response.clearCookie('refreshToken');
-      response.clearCookie('accessToken');
+      this.clearToken(response);
       return {
         statusCode: 200,
         message: 'Logout successfully',
@@ -148,20 +147,24 @@ export class AuthService {
     }
   }
 
-  refreshToken(request: Request, response: Response): Partial<I_Base_Response> {
+  async refreshToken(request: Request, response: Response): Promise<Partial<I_Base_Response>> {
     try {
       const refreshToken = request.cookies['refreshToken'] as string;
-      if (!refreshToken) throw new HttpException('Token not found', 401);
+      if (!refreshToken) throw new HttpException('Token not found', 404);
 
       const user = this.jwtService.verify<I_BaseResponseAuth>(refreshToken, {
         secret: process.env.JWT_REFRESH_TOKEN || 'jwt_refresh_token',
       });
 
-      if (!user) throw new HttpException('Token expired', 401);
+      if (!user) throw new HttpException('Token invalid', 401);
 
-      response.clearCookie('refreshToken');
-      response.clearCookie('accessToken');
+      const userCheck = await this.userRepository.findOneById({ id: user.id });
+      if (!userCheck) {
+        this.clearToken(response);
+        throw new HttpException('User not found', 404);
+      }
 
+      this.clearToken(response);
       this.createAndSendToken(user, response);
       return {
         statusCode: 200,
@@ -169,6 +172,30 @@ export class AuthService {
       };
     } catch (error) {
       throw new HttpException((error as Error).message, 401);
+    }
+  }
+
+  async checkAuth(
+    request: Request,
+    response: Response,
+  ): Promise<I_Base_Response<I_BaseResponseAuth>> {
+    try {
+      const user = request['user'] as I_BaseResponseAuth;
+
+      const userCheck = await this.userRepository.findOneById({ id: user.id });
+
+      if (!userCheck) throw new HttpException('User not found', 404);
+
+      const userWithoutPassword = omit(userCheck, ['password']);
+
+      return {
+        statusCode: 200,
+        message: 'Check auth successfully',
+        data: userWithoutPassword,
+      };
+    } catch (error) {
+      this.clearToken(response);
+      throw new HttpException((error as Error).message, 404);
     }
   }
 
@@ -186,57 +213,21 @@ export class AuthService {
 
     response.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // If true only send cookie over HTTPS
-      sameSite: 'strict', // Block sending cookies cross-site
-      maxAge: 24 * 60 * 60 * 1000,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     response.cookie('accessToken', accessToken, {
-      httpOnly: false,
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 24 * 60 * 60 * 1000,
     });
   }
 
-  checkAuth(request: Request, response: Response) {
-    try {
-      const accessToken = request.cookies['accessToken'] as string;
-      if (!accessToken) throw new HttpException('Token not found', 401);
-
-      const user = this.jwtService.verify<I_BaseResponseAuth>(accessToken, {
-        secret: process.env.JWT_ACCESS_TOKEN || 'jwt_access_token',
-      });
-
-      if (!user) {
-        const refreshToken = request.cookies['refreshToken'] as string;
-        if (!refreshToken) throw new HttpException('Token not found', 401);
-
-        const user = this.jwtService.verify<I_BaseResponseAuth>(refreshToken, {
-          secret: process.env.JWT_REFRESH_TOKEN || 'jwt_refresh_token',
-        });
-        if (!user) {
-          response.clearCookie('refreshToken');
-          response.clearCookie('accessToken');
-          throw new HttpException('Token expired', 401);
-        }
-
-        this.createAndSendToken(user, response);
-
-        return {
-          statusCode: 200,
-          message: 'Check auth successfully',
-          data: user,
-        };
-      }
-
-      return {
-        statusCode: 200,
-        message: 'Check auth successfully',
-        data: user,
-      };
-    } catch {
-      throw new HttpException('Token expired', 401);
-    }
+  clearToken(response: Response): void {
+    response.clearCookie('accessToken');
+    response.clearCookie('refreshToken');
   }
 }

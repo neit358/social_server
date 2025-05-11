@@ -17,7 +17,7 @@ export class LikeService {
 
   async getLikesByPostId(postId: string): Promise<I_Base_Response<Like[]>> {
     try {
-      const likes = await this.likeRepository.getLikesByPostId(postId);
+      const likes = await this.likeRepository.findAll({ where: { postId } });
       if (!likes) throw new HttpException('Likes not found', 404);
       return { statusCode: 200, message: 'Likes found', data: likes };
     } catch (error) {
@@ -27,7 +27,9 @@ export class LikeService {
 
   async getLike({ postId, userId }: BaseLikeDto): Promise<I_Base_Response<LikeResponseDto>> {
     try {
-      const like = await this.likeRepository.getLike(postId, userId);
+      const like = await this.likeRepository.findByCondition({
+        where: { postId, userId },
+      });
       if (!like)
         return {
           statusCode: 200,
@@ -60,9 +62,9 @@ export class LikeService {
       const user = await this.userService.findUserById(userId);
       if (!user) throw new HttpException('User not found', 404);
 
-      const liked = await this.getLike({ postId, userId });
-      if (liked.data.isLiked) {
-        await this.likeRepository.deleteLike(postId, userId);
+      const liked = await this.likeRepository.findByCondition({ where: { postId, userId } });
+      if (liked) {
+        await this.likeRepository.remove(liked);
         return {
           statusCode: 200,
           message: 'Like deleted',
@@ -71,7 +73,8 @@ export class LikeService {
           },
         };
       }
-      const response = await this.likeRepository.createLike(postId, userId);
+      const like = this.likeRepository.createOne({ postId, userId });
+      const response = await this.likeRepository.saveOne(like);
       if (!response) {
         throw new HttpException('Like not found', 404);
       }

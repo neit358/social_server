@@ -16,7 +16,7 @@ export class AuthGuard implements CanActivate {
 
   validateRequest(request: Request): boolean {
     try {
-      const accessToken = request.headers.authorization?.split(' ')[1];
+      const accessToken = request.cookies['accessToken'] as string;
       if (!accessToken) {
         return false;
       }

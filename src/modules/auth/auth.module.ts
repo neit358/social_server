@@ -1,25 +1,17 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { PassportModule } from '@nestjs/passport';
+
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
 import { RedisService } from 'src/services/redis.service';
-import { PassportModule } from '@nestjs/passport';
-import { JwtModule } from '@nestjs/jwt';
-import { UserModule } from '../user/user.module';
+import { JwtConfigModule } from 'src/configs/jwt.config';
+import { UserRepository } from '../user/user.repository';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([User]),
-    PassportModule,
-    JwtModule.registerAsync({
-      useFactory: () => ({
-        secret: process.env.JWT_ACCESS_TOKEN,
-      }),
-    }),
-    UserModule,
-  ],
+  imports: [TypeOrmModule.forFeature([User]), PassportModule, JwtConfigModule],
   controllers: [AuthController],
-  providers: [AuthService, RedisService],
+  providers: [AuthService, RedisService, UserRepository],
 })
 export class AuthModule {}

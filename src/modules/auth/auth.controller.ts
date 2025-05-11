@@ -39,20 +39,17 @@ export class AuthController {
   }
 
   @Get('refresh')
-  refreshToken(
+  async refreshToken(
     @Req()
     request: Request,
     @Res({ passthrough: true }) response: Response,
   ) {
-    return this.authService.refreshToken(request, response);
+    return await this.authService.refreshToken(request, response);
   }
 
   @Get('check')
-  checkAuth(
-    @Req()
-    request: Request,
-    @Res({ passthrough: true }) response: Response,
-  ) {
-    return this.authService.checkAuth(request, response);
+  @UseGuards(AuthGuard)
+  async checkAuth(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
+    return await this.authService.checkAuth(request, response);
   }
 }

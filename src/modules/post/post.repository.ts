@@ -2,57 +2,29 @@ import { In, Repository } from 'typeorm';
 
 import { Post } from './entities/post.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { I_find } from 'src/interfaces/find.interfaces';
-import { I_UpdatePost } from './interfaces/create.interface';
-import { I_CreatePost } from './interfaces/update.interface';
+import BaseAbstractRepository from 'src/repositories/base.abstract.repository';
+import { I_PostRepository } from './interfaces/post.repository.interface';
 
-export class PostRepository extends Repository<Post> {
+export class PostRepository extends BaseAbstractRepository<Post> implements I_PostRepository {
   constructor(@InjectRepository(Post) private postRepository: Repository<Post>) {
-    super(postRepository.target, postRepository.manager, postRepository.queryRunner);
-  }
-
-  async findPost(data: I_find): Promise<Post | null> {
-    return await this.findOne(data);
-  }
-
-  async findPosts(data: I_find): Promise<Post[]> {
-    return await this.find(data);
+    super(postRepository);
   }
 
   async findPostsBySearch(search: string): Promise<Post[]> {
-    return await this.createQueryBuilder('post')
+    return await this.postRepository
+      .createQueryBuilder('post')
       .where('post.title LIKE :search', { search: `%${search}%` })
       .getMany();
   }
 
-  async createPost(data: I_CreatePost): Promise<Post> {
-    const post = this.create(data);
-    return await this.save(post);
-  }
-
-  async deletePost(id: string): Promise<void> {
-    await this.delete(id);
-  }
-
-  async updatePost(id: string, data: I_UpdatePost): Promise<void> {
-    await this.update(id, data);
-  }
-
   async deletePosts(listIdPost: string[]): Promise<void> {
-    const posts = await this.findBy({ id: In(listIdPost) });
+    const posts = await this.postRepository.findBy({ id: In(listIdPost) });
     if (!posts) {
       throw new Error('Posts not found');
     }
 
-    await this.delete({
+    await this.postRepository.delete({
       id: In(listIdPost),
-    });
-  }
-
-  async getUserLikedPostByPostId(postId: string): Promise<Post | null> {
-    return await this.findOne({
-      where: { id: postId },
-      relations: { likes: { user: true } },
     });
   }
 }

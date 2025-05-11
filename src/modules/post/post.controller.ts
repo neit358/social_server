@@ -8,6 +8,7 @@ import {
   Post,
   Query,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -15,6 +16,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { PostService } from './post.service';
 import { ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { CreatePostDto, SearchPostDto, UpdatePostDto } from './dto';
+import { AuthGuard } from '../auth/guards/auth.guard';
 
 @Controller('post')
 export class PostController {
@@ -31,6 +33,7 @@ export class PostController {
   }
 
   @Get('user/:id')
+  @UseGuards(AuthGuard)
   async getPostsByUserIdCtr(@Param('id') id: string) {
     return await this.postService.findPostsByUserId(id);
   }
@@ -48,12 +51,14 @@ export class PostController {
   @Post('create')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('image'))
+  @UseGuards(AuthGuard)
   async createPostCtr(@UploadedFile() file: Express.Multer.File, @Body() body: CreatePostDto) {
     const image = file?.path;
     return await this.postService.createPost(image, body);
   }
 
   @Delete('delete/:id')
+  @UseGuards(AuthGuard)
   async deletePostCtr(@Param('id') id: string) {
     return await this.postService.deletePost(id);
   }
@@ -61,6 +66,7 @@ export class PostController {
   @Patch('update/:id')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('image'))
+  @UseGuards(AuthGuard)
   async updatePostCtr(
     @UploadedFile() file: Express.Multer.File,
     @Param('id') id: string,
@@ -71,6 +77,7 @@ export class PostController {
   }
 
   @Post('delete/list')
+  @UseGuards(AuthGuard)
   @ApiBody({
     description: 'Dữ liệu xóa nhiều bài viết',
     schema: {
@@ -95,6 +102,7 @@ export class PostController {
   }
 
   @Get('user/list/:id')
+  @UseGuards(AuthGuard)
   async getUserLikedPostsByPostId(@Param('id') id: string) {
     return await this.postService.getUserLikedPostByPostId(id);
   }

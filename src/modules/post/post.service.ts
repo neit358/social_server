@@ -8,6 +8,7 @@ import { SearchService } from 'src/services/elasticsearch.service';
 import { UserService } from '../user/user.service';
 import { I_Base_Response } from 'src/interfaces/response.interfaces';
 import { I_UpdatePost } from './interfaces/create.interface';
+import { User } from '../user/entities/user.entity';
 
 @Injectable()
 export class PostService {
@@ -20,10 +21,8 @@ export class PostService {
 
   async findPostById(id: string): Promise<I_Base_Response<Post>> {
     try {
-      const post = await this.postRepository.findPost({
-        where: {
-          id,
-        },
+      const post = await this.postRepository.findOneById({
+        id,
       });
       if (!post) throw new HttpException('Post not found', 404);
 
@@ -41,7 +40,7 @@ export class PostService {
 
   async findPosts(): Promise<I_Base_Response<Post[]>> {
     try {
-      const posts = await this.postRepository.findPosts({
+      const posts = await this.postRepository.findAll({
         relations: {
           user: true,
         },
@@ -59,7 +58,7 @@ export class PostService {
 
   async findPostsByUserId(userId: string): Promise<I_Base_Response<Post[]>> {
     try {
-      const posts = await this.postRepository.findPosts({
+      const posts = await this.postRepository.findAll({
         where: {
           userId,
         },
@@ -108,9 +107,11 @@ export class PostService {
           image;
       }
 
-      const postCreated = await this.postRepository.createPost({ ...data, image: urlImage || '' });
+      const post = this.postRepository.createOne({ ...data, image: urlImage || '' });
 
-      if (!postCreated) throw new HttpException('Post not created', 400);
+      if (!post) throw new HttpException('Post not created', 400);
+
+      const postCreated = await this.postRepository.saveOne(post);
 
       await this.redisService.set(postCreated.id, JSON.stringify(postCreated));
 
@@ -128,7 +129,7 @@ export class PostService {
 
   async updatePost(id: string, body: I_UpdatePost): Promise<Partial<I_Base_Response>> {
     try {
-      const post = await this.postRepository.findPost({
+      const post = await this.postRepository.findByCondition({
         where: {
           id,
         },
@@ -153,7 +154,7 @@ export class PostService {
         ...body,
         image: urlImage || post.image,
       };
-      await this.postRepository.updatePost(id, dataUpdate);
+      await this.postRepository.update(id, dataUpdate);
 
       await this.redisService.set(id, JSON.stringify({ ...post, ...dataUpdate }));
 
@@ -170,11 +171,11 @@ export class PostService {
 
   async deletePost(id: string): Promise<Partial<I_Base_Response>> {
     try {
-      const post = await this.findPostById(id);
+      const post = await this.postRepository.findOneById({ id });
       if (!post) {
         throw new HttpException('Post not found', 404);
       }
-      await this.postRepository.deletePost(id);
+      await this.postRepository.remove(post);
 
       const responseRedis = await this.redisService.get(id);
       if (responseRedis) {
@@ -208,14 +209,17 @@ export class PostService {
     }
   }
 
-  async getUserLikedPostByPostId(postId: string): Promise<I_Base_Response<Post>> {
+  async getUserLikedPostByPostId(postId: string): Promise<I_Base_Response<User>> {
     try {
-      const posts = await this.postRepository.getUserLikedPostByPostId(postId);
-      if (!posts) throw new HttpException('Posts not found', 404);
+      const post = await this.postRepository.findByCondition({
+        where: { id: postId },
+        relations: { likes: { user: true } },
+      });
+      if (!post) throw new HttpException('Post not found', 404);
       return {
         statusCode: 200,
-        message: 'Posts found',
-        data: posts,
+        message: 'Post found',
+        data: post.user,
       };
     } catch (error) {
       throw new HttpException((error as Error).message, 404);
