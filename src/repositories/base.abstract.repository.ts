@@ -1,5 +1,7 @@
 import { DeepPartial, FindManyOptions, FindOptionsWhere, ObjectLiteral, Repository } from 'typeorm';
 import { I_BaseInterfaceRepository } from './base.interface.repository';
+import { RedisService } from 'src/services/redis.service';
+import { SearchService } from 'src/services/elasticsearch.service';
 
 interface HasId {
   id: string;
@@ -8,6 +10,9 @@ interface HasId {
 export default class BaseAbstractRepository<T extends ObjectLiteral & HasId>
   implements I_BaseInterfaceRepository<T>
 {
+  private readonly redisService: RedisService;
+  private readonly elasticsearchService: SearchService<T>;
+
   private entity: Repository<T>;
   constructor(entity: Repository<T>) {
     this.entity = entity;
@@ -17,7 +22,22 @@ export default class BaseAbstractRepository<T extends ObjectLiteral & HasId>
     const options: FindOptionsWhere<T> = {
       id: data.id,
     } as FindOptionsWhere<T>;
-    return await this.entity.findOneBy(options);
+
+    if (!options?.id || typeof options.id !== 'string') {
+      throw new Error('Invalid or missing ID');
+    }
+
+    const redisResponse = await this.redisService.get(options.id);
+
+    if (redisResponse) {
+      return JSON.parse(redisResponse) as T;
+    }
+
+    const response = await this.entity.findOneBy(options);
+
+    await this.redisService.set(options.id, JSON.stringify(data));
+
+    return response;
   }
 
   public async findAll(options: FindManyOptions<T>): Promise<T[]> {
@@ -32,8 +52,13 @@ export default class BaseAbstractRepository<T extends ObjectLiteral & HasId>
     return this.entity.create(data);
   }
 
-  public async saveOne(data: DeepPartial<T>): Promise<T> {
-    return await this.entity.save(data);
+  public async saveOne(data: DeepPartial<T>, index?: string): Promise<T> {
+    const response = await this.entity.save(data);
+    if (index) {
+      const { id, ...docs } = response;
+      await this.elasticsearchService.createIndex(index, id, docs as T);
+    }
+    return response;
   }
 
   public createMany(data: DeepPartial<T>[]): T[] {
@@ -44,11 +69,23 @@ export default class BaseAbstractRepository<T extends ObjectLiteral & HasId>
     return await this.entity.save(data);
   }
 
-  public async update(id: string, data: DeepPartial<T>): Promise<void> {
+  public async update(id: string, data: DeepPartial<T>, index?: string): Promise<void> {
+    await this.redisService.del(id);
+
+    if (index) {
+      await this.elasticsearchService.updateIndex(index, id, data as T);
+    }
+
     await this.entity.update(id, data);
   }
 
-  public async remove(data: T): Promise<T> {
+  public async remove(data: T, index?: string): Promise<T> {
+    await this.redisService.del(data.id);
+
+    if (index) {
+      await this.elasticsearchService.deleteIndex(index, data.id);
+    }
+
     return await this.entity.remove(data);
   }
 }

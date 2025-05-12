@@ -1,4 +1,4 @@
-export interface I_find {
+export interface I_findCondition {
   where?: object;
   relations?: object;
   order?: object;

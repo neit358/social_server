@@ -21,7 +21,7 @@ async function bootstrap() {
     .setTitle('Social API')
     .setDescription('The social API description')
     .setVersion('1.0')
-    .addBearerAuth() // Use JWT authentication
+    // .addBearerAuth() // Use JWT authentication
     .build();
 
   const documentFactory = () => SwaggerModule.createDocument(app, config);

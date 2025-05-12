@@ -3,21 +3,21 @@ import { HttpException, Injectable } from '@nestjs/common';
 import { PostRepository } from './post.repository';
 import { Post } from './entities/post.entity';
 import { CreatePostDto } from './dto/create-post.dto';
-import { RedisService } from 'src/services/redis.service';
-import { SearchService } from 'src/services/elasticsearch.service';
 import { UserService } from '../user/user.service';
 import { I_Base_Response } from 'src/interfaces/response.interfaces';
 import { I_UpdatePost } from './interfaces/create.interface';
 import { User } from '../user/entities/user.entity';
+import { SearchService } from 'src/services/elasticsearch.service';
 
 @Injectable()
 export class PostService {
   constructor(
     private readonly postRepository: PostRepository,
-    private readonly redisService: RedisService,
-    private readonly elasticsearchService: SearchService,
     private readonly userService: UserService,
+    private readonly elasticsearchService: SearchService<Post>,
   ) {}
+
+  index: 'social.posts.dev';
 
   async findPostById(id: string): Promise<I_Base_Response<Post>> {
     try {
@@ -25,8 +25,6 @@ export class PostService {
         id,
       });
       if (!post) throw new HttpException('Post not found', 404);
-
-      await this.redisService.set(id, JSON.stringify(post));
 
       return {
         statusCode: 200,
@@ -68,6 +66,7 @@ export class PostService {
       });
 
       if (!posts) throw new HttpException('Posts not found', 404);
+
       return {
         statusCode: 200,
         message: 'Posts found',
@@ -113,10 +112,6 @@ export class PostService {
 
       const postCreated = await this.postRepository.saveOne(post);
 
-      await this.redisService.set(postCreated.id, JSON.stringify(postCreated));
-
-      await this.elasticsearchService.createIndex('posts', postCreated);
-
       return {
         statusCode: 201,
         message: 'Post created',
@@ -150,15 +145,17 @@ export class PostService {
           body.image;
       }
 
+      const { title, content, userId, ...docs } = post;
+
       const dataUpdate = {
+        title,
+        content,
+        userId,
         ...body,
-        image: urlImage || post.image,
+        image: urlImage || docs.image,
       };
+
       await this.postRepository.update(id, dataUpdate);
-
-      await this.redisService.set(id, JSON.stringify({ ...post, ...dataUpdate }));
-
-      await this.elasticsearchService.updateIndex('posts', id, dataUpdate);
 
       return {
         statusCode: 200,
@@ -176,17 +173,6 @@ export class PostService {
         throw new HttpException('Post not found', 404);
       }
       await this.postRepository.remove(post);
-
-      const responseRedis = await this.redisService.get(id);
-      if (responseRedis) {
-        await this.redisService.del(id);
-      }
-
-      const responseElasticsearch = await this.elasticsearchService.getPostById('posts', id);
-
-      if (responseElasticsearch) {
-        await this.elasticsearchService.deleteIndex('posts', id);
-      }
 
       return {
         statusCode: 200,
@@ -226,17 +212,21 @@ export class PostService {
     }
   }
 
-  async getPostsByTitleByElasticsearch(title: string): Promise<I_Base_Response<Post[]>> {
+  async getPostsConditionByElasticsearch(
+    default_field: string,
+    value: string,
+  ): Promise<I_Base_Response<Post[]>> {
     try {
-      const query = {
-        query: {
-          query_string: {
-            default_field: 'title',
-            query: `*${title || ''}*`,
-          },
+      const query = this.elasticsearchService.generateQuery({
+        query_string: {
+          default_field,
+          query: value,
         },
-      };
-      const result = await this.elasticsearchService.search('posts', query);
+      });
+
+      const result = await this.elasticsearchService.search(this.index, {
+        query,
+      });
 
       if (!result) throw new HttpException('Posts not found', 404);
       return {
@@ -252,3 +242,5 @@ export class PostService {
     }
   }
 }
+
+// agg elasticsearch

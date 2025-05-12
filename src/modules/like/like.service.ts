@@ -55,7 +55,6 @@ export class LikeService {
     userId,
   }: BaseLikeDto): Promise<Partial<I_Base_Response<LikeResponseDto>>> {
     try {
-      console.log('actionLike', postId, userId);
       const post = await this.postService.findPostById(postId);
       if (!post) throw new HttpException('Post not found', 404);
 

@@ -4,7 +4,6 @@ import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto, VerifyRegisterDto } from './dto';
 import { AuthGuard } from './guards/auth.guard';
-import { ApiBasicAuth } from '@nestjs/swagger';
 
 @Controller('auth')
 export class AuthController {
@@ -32,7 +31,6 @@ export class AuthController {
   }
 
   @Get('logout')
-  @ApiBasicAuth()
   @UseGuards(AuthGuard)
   logout(@Res({ passthrough: true }) response: Response) {
     return this.authService.logout(response);

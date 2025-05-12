@@ -11,10 +11,10 @@ import { SearchService as ElasticsearchService } from 'src/services/elasticsearc
         maxRetries: 5,
         requestTimeout: 60000,
         pingTimeout: 30000,
-        auth: {
-          username: process.env.ELASTICSEARCH_USERNAME || 'defaultUsername',
-          password: process.env.ELASTICSEARCH_PASSWORD || 'defaultPassword',
-        },
+        // auth: {
+        //   username: process.env.ELASTICSEARCH_USERNAME || 'defaultUsername',
+        //   password: process.env.ELASTICSEARCH_PASSWORD || 'defaultPassword',
+        // },
         ssl: {
           rejectUnauthorized: false,
         },

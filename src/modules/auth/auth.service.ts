@@ -33,6 +33,38 @@ export class AuthService {
       },
     );
 
+  createAndSendToken(user: I_BaseResponseAuth, response: Response): void {
+    const accessToken = this.signToken(
+      user,
+      process.env.JWT_ACCESS_TOKEN || 'jwt_access_token',
+      '1m',
+    );
+    const refreshToken = this.signToken(
+      user,
+      process.env.JWT_REFRESH_TOKEN || 'jwt_refresh_token',
+      '7d',
+    );
+
+    response.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    response.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+  }
+
+  clearToken(response: Response): void {
+    response.clearCookie('accessToken');
+    response.clearCookie('refreshToken');
+  }
+
   async register(key: string, seconds: number): Promise<Partial<I_Base_Response>> {
     try {
       const user: User | null = await this.userRepository.findByCondition({
@@ -65,9 +97,9 @@ export class AuthService {
     try {
       const codeRedis = await this.redisService.get(key);
       if (!codeRedis) throw new HttpException('OTP not found', 404);
-      if (codeRedis !== code) throw new HttpException('OTP not found', 404);
+      if (codeRedis !== code) throw new HttpException('OTP invalid', 401);
       const codeDel = await this.redisService.del(key);
-      if (!codeDel) throw new HttpException('OTP not found', 404);
+      if (!codeDel) throw new HttpException('OTP cannot delete', 401);
 
       const hashedPassword = await this.hashPassword(createUserDto.password);
       const userCreate: User = this.userRepository.createOne({
@@ -159,18 +191,18 @@ export class AuthService {
       if (!user) throw new HttpException('Token invalid', 401);
 
       const userCheck = await this.userRepository.findOneById({ id: user.id });
+
       if (!userCheck) {
-        this.clearToken(response);
         throw new HttpException('User not found', 404);
       }
 
-      this.clearToken(response);
       this.createAndSendToken(user, response);
       return {
         statusCode: 200,
         message: 'Refresh token successfully',
       };
     } catch (error) {
+      this.clearToken(response);
       throw new HttpException((error as Error).message, 401);
     }
   }
@@ -197,37 +229,5 @@ export class AuthService {
       this.clearToken(response);
       throw new HttpException((error as Error).message, 404);
     }
-  }
-
-  createAndSendToken(user: I_BaseResponseAuth, response: Response): void {
-    const accessToken = this.signToken(
-      user,
-      process.env.JWT_ACCESS_TOKEN || 'jwt_access_token',
-      '1m',
-    );
-    const refreshToken = this.signToken(
-      user,
-      process.env.JWT_REFRESH_TOKEN || 'jwt_refresh_token',
-      '7d',
-    );
-
-    response.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    response.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000,
-    });
-  }
-
-  clearToken(response: Response): void {
-    response.clearCookie('accessToken');
-    response.clearCookie('refreshToken');
   }
 }

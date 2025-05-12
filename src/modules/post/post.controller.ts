@@ -33,14 +33,18 @@ export class PostController {
   }
 
   @Get('user/:id')
-  @UseGuards(AuthGuard)
   async getPostsByUserIdCtr(@Param('id') id: string) {
     return await this.postService.findPostsByUserId(id);
   }
 
-  @Get('search/elastic')
+  @Get('elastic/user/:id')
+  async getPostsByUserIdByElasticsearch(@Param('id') id: string) {
+    return await this.postService.getPostsConditionByElasticsearch('userId', `${id || ''}`);
+  }
+
+  @Get('elastic/search')
   async getPostsByTitleByElasticsearch(@Query() { title }: SearchPostDto) {
-    return await this.postService.getPostsByTitleByElasticsearch(title);
+    return await this.postService.getPostsConditionByElasticsearch('title', `*${title || ''}*`);
   }
 
   @Get('search/:search')

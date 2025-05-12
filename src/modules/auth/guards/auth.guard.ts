@@ -25,8 +25,7 @@ export class AuthGuard implements CanActivate {
       });
       request['user'] = payload;
       return true;
-    } catch (error) {
-      console.log('JWT verification error:', (error as Error).message);
+    } catch {
       return false;
     }
   }
