@@ -17,7 +17,7 @@ export class PostService {
     private readonly elasticsearchService: SearchService<Post>,
   ) {}
 
-  index: 'social.posts.dev';
+  index = 'social.posts.dev';
 
   async findPostById(id: string): Promise<I_Base_Response<Post>> {
     try {
@@ -110,7 +110,7 @@ export class PostService {
 
       if (!post) throw new HttpException('Post not created', 400);
 
-      const postCreated = await this.postRepository.saveOne(post);
+      const postCreated = await this.postRepository.saveOne(post, this.index);
 
       return {
         statusCode: 201,
@@ -155,7 +155,7 @@ export class PostService {
         image: urlImage || docs.image,
       };
 
-      await this.postRepository.update(id, dataUpdate);
+      await this.postRepository.update(id, dataUpdate, this.index);
 
       return {
         statusCode: 200,
@@ -172,7 +172,7 @@ export class PostService {
       if (!post) {
         throw new HttpException('Post not found', 404);
       }
-      await this.postRepository.remove(post);
+      await this.postRepository.remove(post, this.index);
 
       return {
         statusCode: 200,
@@ -186,6 +186,12 @@ export class PostService {
   async deletePosts(listIdPost: string[]): Promise<Partial<I_Base_Response>> {
     try {
       await this.postRepository.deletePosts(listIdPost);
+
+      await this.elasticsearchService.deleteIndex({
+        index: this.index,
+        id: listIdPost.join(','),
+      });
+
       return {
         statusCode: 200,
         message: 'Posts deleted',

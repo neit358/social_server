@@ -6,20 +6,19 @@ import { SearchService as ElasticsearchService } from 'src/services/elasticsearc
 @Module({
   imports: [
     NestElasticsearchModule.registerAsync({
-      useFactory: () => ({
-        node: process.env.ELASTICSEARCH_NODE,
-        maxRetries: 5,
-        requestTimeout: 60000,
-        pingTimeout: 30000,
-        // auth: {
-        //   username: process.env.ELASTICSEARCH_USERNAME || 'defaultUsername',
-        //   password: process.env.ELASTICSEARCH_PASSWORD || 'defaultPassword',
-        // },
-        ssl: {
-          rejectUnauthorized: false,
-        },
-        compatibility: true,
-      }),
+      useFactory: () => {
+        console.log('Elasticsearch node:', process.env.ELASTICSEARCH_NODE);
+        return {
+          node: process.env.ELASTICSEARCH_NODE || 'http://localhost:9200',
+          maxRetries: 5,
+          requestTimeout: 60000,
+          pingTimeout: 30000,
+          ssl: {
+            rejectUnauthorized: false,
+          },
+          compatibility: true,
+        };
+      },
     }),
   ],
   providers: [ElasticsearchService],

@@ -4,10 +4,16 @@ import { Repository } from 'typeorm';
 
 import { Like } from './entities/like.entity';
 import BaseAbstractRepository from 'src/repositories/base.abstract.repository';
+import { RedisService } from 'src/services/redis.service';
+import { SearchService } from 'src/services/elasticsearch.service';
 
 @Injectable()
 export class LikeRepository extends BaseAbstractRepository<Like> {
-  constructor(@InjectRepository(Like) private readonly likeRepository: Repository<Like>) {
-    super(likeRepository);
+  constructor(
+    @InjectRepository(Like) private likeRepository: Repository<Like>,
+    redisService: RedisService,
+    searchService: SearchService<Like>,
+  ) {
+    super(likeRepository, redisService, searchService);
   }
 }

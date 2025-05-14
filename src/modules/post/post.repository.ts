@@ -4,10 +4,16 @@ import { Post } from './entities/post.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import BaseAbstractRepository from 'src/repositories/base.abstract.repository';
 import { I_PostRepository } from './interfaces/post.repository.interface';
+import { RedisService } from 'src/services/redis.service';
+import { SearchService } from 'src/services/elasticsearch.service';
 
 export class PostRepository extends BaseAbstractRepository<Post> implements I_PostRepository {
-  constructor(@InjectRepository(Post) private postRepository: Repository<Post>) {
-    super(postRepository);
+  constructor(
+    @InjectRepository(Post) private postRepository: Repository<Post>,
+    redisService: RedisService,
+    searchService: SearchService<Post>,
+  ) {
+    super(postRepository, redisService, searchService);
   }
 
   async findPostsBySearch(search: string): Promise<Post[]> {

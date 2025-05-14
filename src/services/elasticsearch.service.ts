@@ -5,9 +5,11 @@ import { I_ResponseElasticsearch } from 'src/interfaces/response.interfaces';
 import {
   I_Base_Array,
   I_Base_Single,
+  I_BaseElasticsearch,
+  I_ElasticsearchData,
   I_Query_String,
   I_QueryElasticsearch,
-} from './interfaces/query.elasticsearch.interface';
+} from './interfaces/elasticsearch.interface';
 
 interface hasId {
   id: string;
@@ -17,25 +19,25 @@ interface hasId {
 export class SearchService<T extends hasId> {
   constructor(private readonly elasticsearchService: ElasticsearchService) {}
 
-  async createIndex(index: string, id: string, data: T): Promise<void> {
+  async createIndex({ index, id, body }: I_ElasticsearchData<T>): Promise<void> {
     await this.elasticsearchService.index({
       index,
       id,
-      body: data,
+      body,
     });
   }
 
-  async updateIndex(index: string, id: string, data: Partial<T>): Promise<void> {
+  async updateIndex({ index, id, body }: I_ElasticsearchData<Partial<T>>): Promise<void> {
     await this.elasticsearchService.update({
       index,
       id,
       body: {
-        doc: data,
+        doc: body,
       },
     });
   }
 
-  async deleteIndex(index: string, id: string): Promise<void> {
+  async deleteIndex({ index, id }: I_BaseElasticsearch): Promise<void> {
     await this.elasticsearchService.delete({
       index,
       id,

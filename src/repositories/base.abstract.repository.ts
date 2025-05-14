@@ -10,12 +10,14 @@ interface HasId {
 export default class BaseAbstractRepository<T extends ObjectLiteral & HasId>
   implements I_BaseInterfaceRepository<T>
 {
-  private readonly redisService: RedisService;
-  private readonly elasticsearchService: SearchService<T>;
+  protected readonly redisService: RedisService;
+  protected readonly elasticsearchService: SearchService<T>;
+  protected readonly entity: Repository<T>;
 
-  private entity: Repository<T>;
-  constructor(entity: Repository<T>) {
+  constructor(entity: Repository<T>, redisService: RedisService, elasticsearch: SearchService<T>) {
     this.entity = entity;
+    this.redisService = redisService;
+    this.elasticsearchService = elasticsearch;
   }
 
   public async findOneById(data: DeepPartial<T>): Promise<T | null> {
@@ -35,7 +37,7 @@ export default class BaseAbstractRepository<T extends ObjectLiteral & HasId>
 
     const response = await this.entity.findOneBy(options);
 
-    await this.redisService.set(options.id, JSON.stringify(data));
+    await this.redisService.set(options.id, JSON.stringify(response));
 
     return response;
   }
@@ -56,7 +58,11 @@ export default class BaseAbstractRepository<T extends ObjectLiteral & HasId>
     const response = await this.entity.save(data);
     if (index) {
       const { id, ...docs } = response;
-      await this.elasticsearchService.createIndex(index, id, docs as T);
+      await this.elasticsearchService.createIndex({
+        index,
+        id,
+        body: docs as T,
+      });
     }
     return response;
   }
@@ -73,7 +79,11 @@ export default class BaseAbstractRepository<T extends ObjectLiteral & HasId>
     await this.redisService.del(id);
 
     if (index) {
-      await this.elasticsearchService.updateIndex(index, id, data as T);
+      await this.elasticsearchService.updateIndex({
+        index,
+        id,
+        body: data as T,
+      });
     }
 
     await this.entity.update(id, data);
@@ -83,7 +93,10 @@ export default class BaseAbstractRepository<T extends ObjectLiteral & HasId>
     await this.redisService.del(data.id);
 
     if (index) {
-      await this.elasticsearchService.deleteIndex(index, data.id);
+      await this.elasticsearchService.deleteIndex({
+        index,
+        id: data.id,
+      });
     }
 
     return await this.entity.remove(data);

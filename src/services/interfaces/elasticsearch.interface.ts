@@ -32,3 +32,12 @@ export interface I_QueryElasticsearch {
   terms?: I_Base_Array;
   range?: I_Range;
 }
+
+export interface I_BaseElasticsearch {
+  index: string;
+  id: string;
+}
+
+export interface I_ElasticsearchData<T> extends I_BaseElasticsearch {
+  body: T;
+}

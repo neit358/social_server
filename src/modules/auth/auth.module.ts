@@ -8,9 +8,10 @@ import { User } from '../user/entities/user.entity';
 import { RedisService } from 'src/services/redis.service';
 import { JwtConfigModule } from 'src/configs/jwt.config';
 import { UserRepository } from '../user/user.repository';
+import { ElasticsearchModule } from 'src/configs/elasticsearch.config';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), PassportModule, JwtConfigModule],
+  imports: [TypeOrmModule.forFeature([User]), PassportModule, JwtConfigModule, ElasticsearchModule],
   controllers: [AuthController],
   providers: [AuthService, RedisService, UserRepository],
 })
