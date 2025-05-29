@@ -25,6 +25,11 @@ export class UserController {
     return await this.userService.findUsers();
   }
 
+  @Get('microservices/:id')
+  getUserFromMicroservices(@Param('id') id: number) {
+    return this.userService.getHeroFromMicroservices({ id });
+  }
+
   @Get(':id')
   async findUserByIdCtr(@Param('id') id: string) {
     return await this.userService.findUserById(id);

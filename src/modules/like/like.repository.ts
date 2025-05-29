@@ -3,9 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Like } from './entities/like.entity';
-import BaseAbstractRepository from 'src/repositories/base.abstract.repository';
-import { RedisService } from 'src/services/redis.service';
-import { SearchService } from 'src/services/elasticsearch.service';
+import BaseAbstractRepository from '../../repositories/base.abstract.repository';
+import { RedisService } from '../../services/redis.service';
+import { SearchService } from '../../services/elasticsearch.service';
 
 @Injectable()
 export class LikeRepository extends BaseAbstractRepository<Like> {

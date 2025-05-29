@@ -18,7 +18,6 @@ export class LikeService {
   async getLikesByPostId(postId: string): Promise<I_Base_Response<Like[]>> {
     try {
       const likes = await this.likeRepository.findAll({ where: { postId } });
-      if (!likes) throw new HttpException('Likes not found', 404);
       return { statusCode: 200, message: 'Likes found', data: likes };
     } catch (error) {
       throw new HttpException((error as Error).message, 404);
@@ -33,7 +32,7 @@ export class LikeService {
       if (!like)
         return {
           statusCode: 200,
-          message: 'Like found',
+          message: "Like wasn't found",
           data: {
             isLiked: false,
           },
@@ -55,11 +54,8 @@ export class LikeService {
     userId,
   }: BaseLikeDto): Promise<Partial<I_Base_Response<LikeResponseDto>>> {
     try {
-      const post = await this.postService.findPostById(postId);
-      if (!post) throw new HttpException('Post not found', 404);
-
-      const user = await this.userService.findUserById(userId);
-      if (!user) throw new HttpException('User not found', 404);
+      await this.postService.findPostById(postId);
+      await this.userService.findUserById(userId);
 
       const liked = await this.likeRepository.findByCondition({ where: { postId, userId } });
       if (liked) {

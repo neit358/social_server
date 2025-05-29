@@ -31,7 +31,7 @@ export default class BaseAbstractRepository<T extends ObjectLiteral & HasId>
 
     const redisResponse = await this.redisService.get(options.id);
 
-    if (redisResponse) {
+    if (redisResponse && redisResponse !== 'null') {
       return JSON.parse(redisResponse) as T;
     }
 

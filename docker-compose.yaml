@@ -1,4 +1,24 @@
 services:
+  app:
+    image: node:20-alpine
+    command: sh -c "npm install && npm run start"
+    container_name: server_social
+    ports:
+      - '3001:3001'
+    working_dir: /app
+    volumes:
+      - ./.:/app
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: social_db
+      REDIS_URL: redis://redis_cache:6379
+    depends_on:
+      - postgres
+      - redis_cache
+
   postgres:
     image: postgres:latest
     container_name: social_db
@@ -19,26 +39,6 @@ services:
       - '6379:6379'
     volumes:
       - 'cache:/data'
-
-  app:
-    image: node:20-alpine
-    command: sh -c "npm install && npm run start"
-    container_name: server_social
-    ports:
-      - '3001:3001'
-    working_dir: /app
-    volumes:
-      - ./.:/app
-    environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: social_db
-      REDIS_URL: redis://redis_cache:6379
-    depends_on:
-      - postgres
-      - redis_cache
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
@@ -65,10 +65,31 @@ services:
     depends_on:
       - elasticsearch
 
+  beanstalkd:
+    image: schickling/beanstalkd
+    container_name: social_beanstalkd
+    ports:
+      - '11300:11300'
+    volumes:
+      - beanstalkd_data:/var/lib/beanstald
+
+  jaeger:
+    image: jaegertracing/jaeger:2.0.0
+    ports:
+      - '16686:16686' # UI
+      - '14268:14268' # HTTP endpoint for OpenTelemetry
+      - '14250:14250' # gRPC
+      - '6831:6831/udp' # UDP (agent Thrift)
+      - '5778:5778' # config for agents
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+
 volumes:
   pgdata:
     driver: local
   cache:
     driver: local
   esdata:
+    driver: local
+  beanstalkd_data:
     driver: local

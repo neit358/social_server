@@ -13,6 +13,10 @@ import { RedisModule } from './configs/redis.config';
 import { Post } from './modules/post/entities/post.entity';
 import { Like } from './modules/like/entities/like.entity';
 import { ElasticsearchModule } from './configs/elasticsearch.config';
+import { ChatModule } from './chat/chat.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { NotificationService } from './services/schedule.service';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
   imports: [
@@ -27,14 +31,25 @@ import { ElasticsearchModule } from './configs/elasticsearch.config';
       entities: [User, Post, Like],
       synchronize: true,
     }),
-    UserModule,
+    ScheduleModule.forRoot(),
+    BullModule.forRoot({
+      connection: {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379', 10),
+      },
+    }),
     PostModule,
     AuthModule,
     LikeModule,
     RedisModule,
     ElasticsearchModule,
+    ChatModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService /*NotificationService*/],
 })
-export class AppModule {}
+export class AppModule /* implements NestModule */ {
+  // configure(consumer: MiddlewareConsumer) {
+  //   consumer.apply(CommonMiddleware).forRoutes('*');
+  // }
+}

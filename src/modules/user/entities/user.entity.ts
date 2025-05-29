@@ -1,5 +1,5 @@
-import { Like } from 'src/modules/like/entities/like.entity';
-import { Post } from 'src/modules/post/entities/post.entity';
+import { Like } from '../../like/entities/like.entity';
+import { Post } from '../../post/entities/post.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
