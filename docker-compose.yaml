@@ -15,9 +15,17 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: social_db
       REDIS_URL: redis://redis_cache:6379
+      REDIS_HOST: redis_cache
+      REDIS_PORT: 6379
+      BEANSTALKD_HOST: beanstalkd
+      BEANSTALKD_PORT: 11300
     depends_on:
       - postgres
       - redis_cache
+      - elasticsearch
+      - kibana
+      - beanstalkd
+      - jaeger
 
   postgres:
     image: postgres:latest
@@ -41,7 +49,7 @@ services:
       - 'cache:/data'
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+    image: bashell/alpine-elasticsearch
     container_name: social_elasticsearch
     environment:
       - node.name=social_node
@@ -58,7 +66,7 @@ services:
       - esdata:/usr/share/elasticsearch/data
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.10.0
+    image: blacktop/kibana
     container_name: social_kibana
     ports:
       - '5601:5601'
@@ -75,6 +83,7 @@ services:
 
   jaeger:
     image: jaegertracing/jaeger:2.0.0
+    container_name: social_jaeger
     ports:
       - '16686:16686' # UI
       - '14268:14268' # HTTP endpoint for OpenTelemetry

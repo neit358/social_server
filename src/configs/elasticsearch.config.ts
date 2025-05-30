@@ -8,7 +8,7 @@ import { SearchService as ElasticsearchService } from 'src/services/elasticsearc
     NestElasticsearchModule.registerAsync({
       useFactory: () => {
         return {
-          node: process.env.ELASTICSEARCH_NODE || 'http://localhost:9200',
+          node: process.env.ELASTICSEARCH_NODE,
           maxRetries: 5,
           requestTimeout: 60000,
           pingTimeout: 30000,
