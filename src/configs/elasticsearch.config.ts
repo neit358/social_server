@@ -12,6 +12,9 @@ import { SearchService as ElasticsearchService } from 'src/services/elasticsearc
           maxRetries: 5,
           requestTimeout: 60000,
           pingTimeout: 30000,
+          auth: {
+            apiKey: process.env.API_KEY_ELK || '',
+          },
           ssl: {
             rejectUnauthorized: false,
           },

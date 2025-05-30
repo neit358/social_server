@@ -8,10 +8,10 @@ import { omit } from 'lodash';
 import { I_Base_Response } from 'src/interfaces/response.interfaces';
 import { lastValueFrom } from 'rxjs';
 import { Hero, HeroById, HeroesService } from './interfaces/hero.interface';
-import { Cron, CronExpression, Interval, SchedulerRegistry, Timeout } from '@nestjs/schedule';
-import { CronTime } from 'cron';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
+import { /*Cron, CronExpression, Interval,*/ SchedulerRegistry, Timeout } from '@nestjs/schedule';
+// import { CronTime } from 'cron';
+// import { InjectQueue } from '@nestjs/bullmq';
+// import { Queue } from 'bullmq';
 
 @Injectable()
 export class UserService {
@@ -21,7 +21,7 @@ export class UserService {
     @Inject('HERO_SERVICE') private client: ClientGrpc,
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly logger: Logger,
-    @InjectQueue('user') private readonly userQueue: Queue,
+    // @InjectQueue('user') private readonly userQueue: Queue,
   ) {
     this.heroesService = this.client.getService<HeroesService>('HeroesService');
   }
@@ -204,28 +204,28 @@ export class UserService {
     this.schedulerRegistry.addTimeout(name, timeout);
   }
 
-  clearTimeout(name: string) {
-    console.log(`Clearing timeout: ${name}`);
-    const timeout = this.schedulerRegistry.getTimeout(name);
-    clearTimeout(timeout);
-    this.schedulerRegistry.deleteTimeout(name);
-  }
+  // clearTimeout(name: string) {
+  //   console.log(`Clearing timeout: ${name}`);
+  //   const timeout = this.schedulerRegistry.getTimeout(name);
+  //   clearTimeout(timeout);
+  //   this.schedulerRegistry.deleteTimeout(name);
+  // }
 
-  addInterval(name: string, milliseconds: number) {
-    const callback = () => {
-      this.logger.warn(`Interval ${name} executing after (${milliseconds})!`);
-    };
+  // addInterval(name: string, milliseconds: number) {
+  //   const callback = () => {
+  //     this.logger.warn(`Interval ${name} executing after (${milliseconds})!`);
+  //   };
 
-    const interval = setInterval(callback, milliseconds);
-    this.schedulerRegistry.addInterval(name, interval);
-  }
+  //   const interval = setInterval(callback, milliseconds);
+  //   this.schedulerRegistry.addInterval(name, interval);
+  // }
 
-  clearInterval(name: string) {
-    console.log(`Clearing interval: ${name}`);
-    const interval = this.schedulerRegistry.getInterval(name);
-    clearInterval(interval);
-    this.schedulerRegistry.deleteInterval(name);
-  }
+  // clearInterval(name: string) {
+  //   console.log(`Clearing interval: ${name}`);
+  //   const interval = this.schedulerRegistry.getInterval(name);
+  //   clearInterval(interval);
+  //   this.schedulerRegistry.deleteInterval(name);
+  // }
 }
 
 // cache user

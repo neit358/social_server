@@ -5,7 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { User } from './modules/user/entities/user.entity';
-import { UserModule } from './modules/user/user.module';
+// import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { LikeModule } from './modules/like/like.module';
 import { PostModule } from './modules/post/post.module';
@@ -15,8 +15,8 @@ import { Like } from './modules/like/entities/like.entity';
 import { ElasticsearchModule } from './configs/elasticsearch.config';
 import { ChatModule } from './chat/chat.module';
 import { ScheduleModule } from '@nestjs/schedule';
-import { NotificationService } from './services/schedule.service';
-import { BullModule } from '@nestjs/bullmq';
+// import { NotificationService } from './services/schedule.service';
+// import { BullModule } from '@nestjs/bullmq';
 
 @Module({
   imports: [
@@ -30,14 +30,17 @@ import { BullModule } from '@nestjs/bullmq';
       database: process.env.POSTGRES_DB,
       entities: [User, Post, Like],
       synchronize: true,
+      ssl: {
+        rejectUnauthorized: false,
+      }, // Enable SSL for production
     }),
     ScheduleModule.forRoot(),
-    BullModule.forRoot({
-      connection: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379', 10),
-      },
-    }),
+    // BullModule.forRoot({
+    //   connection: {
+    //     host: process.env.REDIS_HOST,
+    //     port: parseInt(process.env.REDIS_PORT || '6379', 10),
+    //   },
+    // }),
     PostModule,
     AuthModule,
     LikeModule,

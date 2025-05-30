@@ -10,7 +10,7 @@ import { RedisService } from 'src/services/redis.service';
 import { UserModule } from '../user/user.module';
 import { JwtConfigModule } from 'src/configs/jwt.config';
 import { MulterConfigModule } from 'src/configs/multer.config';
-import { BeanstalkdProvider } from 'src/provider/beanstalkd/beanstalkd.provider';
+// import { BeanstalkdProvider } from 'src/provider/beanstalkd/beanstalkd.provider';
 
 @Module({
   imports: [
@@ -21,7 +21,7 @@ import { BeanstalkdProvider } from 'src/provider/beanstalkd/beanstalkd.provider'
     ElasticsearchModule,
   ],
   controllers: [PostController],
-  providers: [PostService, PostRepository, RedisService, BeanstalkdProvider],
+  providers: [PostService, PostRepository, RedisService /*BeanstalkdProvider*/],
   exports: [PostService],
 })
 export class PostModule {}

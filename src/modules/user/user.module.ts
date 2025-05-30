@@ -10,9 +10,9 @@ import { RedisService } from 'src/services/redis.service';
 import { ElasticsearchModule } from 'src/configs/elasticsearch.config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
-import { BullModule } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
-import { BullMQConsumer } from 'src/provider/bullmq/bullmq.consumer';
+// import { BullModule } from '@nestjs/bullmq';
+// import { Queue } from 'bullmq';
+// import { BullMQConsumer } from 'src/provider/bullmq/bullmq.consumer';
 
 @Module({
   imports: [
@@ -27,16 +27,16 @@ import { BullMQConsumer } from 'src/provider/bullmq/bullmq.consumer';
         },
       },
     ]),
-    BullModule.registerQueue({
-      name: 'user',
-    }),
+    // BullModule.registerQueue({
+    //   name: 'user',
+    // }),
     TypeOrmModule.forFeature([User]),
     JwtConfigModule,
     JwtConfigModule,
     ElasticsearchModule,
   ],
   controllers: [UserController],
-  providers: [UserService, UserRepository, RedisService, Logger, BullMQConsumer],
+  providers: [UserService, UserRepository, RedisService, Logger /*BullMQConsumer*/],
   exports: [UserService, UserRepository],
 })
 export class UserModule {}
