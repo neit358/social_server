@@ -5,10 +5,10 @@ import { join } from 'path';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 import * as express from 'express';
-import { otelSDK } from './tracing';
+// import { otelSDK } from './tracing';
 
 async function bootstrap() {
-  otelSDK.start();
+  // otelSDK.start();
 
   // const app = await NestFactory.createMicroservice<NestExpressApplication>(AppModule, {
   //   transport: Transport.TCP,
