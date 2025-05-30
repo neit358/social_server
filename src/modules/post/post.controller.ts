@@ -12,21 +12,31 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import * as fs from 'fs';
+import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 
 import { PostService } from './post.service';
-import { ApiBody, ApiConsumes } from '@nestjs/swagger';
-import { CreatePostDto, SearchPostDto, UpdatePostDto } from './dto';
-import { AuthGuard } from '../auth/guards/auth.guard';
 import * as path from 'path';
+import { AuthGuard } from '../auth/guards/auth.guard';
+import { DeletePostDto } from './dto/delete-post.dto';
+import { CreatePostDto, SearchPostDto, UpdatePostDto } from './dto';
 import { CommonInterceptor } from 'src/interceptor/common.interceptor';
+import { RolesGuard } from 'src/guards/role/role.guard';
+import { Roles } from 'src/guards/role/role.decorator';
+import { Role } from 'src/guards/role/role.enum';
+import { Permissions } from 'src/guards/permission/permission.decorator';
+import { Permission } from 'src/guards/permission/permission.enum';
+import { PermissionGuard } from 'src/guards/permission/permission.guard';
 
 @Controller('post')
 export class PostController {
   constructor(private readonly postService: PostService) {}
 
   @Get('')
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(Role.Admin, Role.User)
   // @UseInterceptors(CommonInterceptor)
   async getPostsCtr() {
     return await this.postService.findPosts();
@@ -146,6 +156,8 @@ export class PostController {
       },
     }),
   )
+  @ApiBearerAuth()
+  @ApiBearerAuth()
   @UseGuards(AuthGuard)
   async createPostCtr(@UploadedFile() file: Express.Multer.File, @Body() body: CreatePostDto) {
     const image = file?.path;
@@ -153,7 +165,9 @@ export class PostController {
   }
 
   @Delete('delete/:id')
-  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard, PermissionGuard)
+  @Permissions(Permission.Delete)
   async deletePostCtr(@Param('id') id: string) {
     return await this.postService.deletePost(id);
   }
@@ -161,6 +175,7 @@ export class PostController {
   @Patch('update/:id')
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('image'))
+  @ApiBearerAuth()
   @UseGuards(AuthGuard)
   async updatePostCtr(
     @UploadedFile() file: Express.Multer.File,
@@ -172,31 +187,14 @@ export class PostController {
   }
 
   @Post('delete/list')
+  @ApiBearerAuth()
   @UseGuards(AuthGuard)
-  @ApiBody({
-    description: 'Dữ liệu xóa nhiều bài viết',
-    schema: {
-      type: 'object',
-      properties: {
-        listPostId: {
-          type: 'array',
-          items: {
-            type: 'string',
-          },
-        },
-      },
-    },
-  })
-  async deletePostsCtr(
-    @Body()
-    body: {
-      listPostId: string[];
-    },
-  ) {
-    return await this.postService.deletePosts(body.listPostId);
+  async deletePostsCtr(@Query() query: DeletePostDto) {
+    return await this.postService.deletePosts(query.listPostId);
   }
 
   @Get('user/list/:id')
+  @ApiBearerAuth()
   @UseGuards(AuthGuard)
   async getUserLikedPostsByPostId(@Param('id') id: string) {
     return await this.postService.getUserLikedPostByPostId(id);

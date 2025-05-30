@@ -26,6 +26,8 @@ export class AuthService {
         id: user.id,
         email: user.email,
         name: user.name,
+        avatar: user.avatar,
+        role: user.role,
       },
       {
         secret,
@@ -33,11 +35,11 @@ export class AuthService {
       },
     );
 
-  createAndSendToken(user: I_BaseResponseAuth, response: Response): void {
+  createAndSendToken(user: I_BaseResponseAuth, response: Response): string {
     const accessToken = this.signToken(
       user,
       process.env.JWT_ACCESS_TOKEN || 'jwt_access_token',
-      '1m',
+      '1d',
     );
     const refreshToken = this.signToken(
       user,
@@ -58,6 +60,8 @@ export class AuthService {
       sameSite: 'strict',
       maxAge: 24 * 60 * 60 * 1000,
     });
+
+    return accessToken;
   }
 
   clearToken(response: Response): void {
@@ -137,12 +141,13 @@ export class AuthService {
       const isPasswordValid = await this.comparePassword(password, user.password);
       if (!isPasswordValid) throw new HttpException('Password incorrect!', 404);
 
-      this.createAndSendToken(
+      const accessToken = this.createAndSendToken(
         {
           id: user.id,
           email: user.email,
           name: user.name,
           avatar: user.avatar,
+          role: user.role,
         },
         response,
       );
@@ -151,7 +156,10 @@ export class AuthService {
       return {
         statusCode: 200,
         message: 'Login successfully',
-        data: userWithoutPassword,
+        data: {
+          ...userWithoutPassword,
+          accessToken,
+        },
       };
     } catch (error) {
       throw new HttpException((error as Error).message, 404);

@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto, VerifyRegisterDto } from './dto';
 import { AuthGuard } from './guards/auth.guard';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('auth')
 export class AuthController {
@@ -31,6 +32,7 @@ export class AuthController {
   }
 
   @Get('logout')
+  @ApiBearerAuth()
   @UseGuards(AuthGuard)
   logout(@Res({ passthrough: true }) response: Response) {
     return this.authService.logout(response);
@@ -46,6 +48,7 @@ export class AuthController {
   }
 
   @Get('check')
+  @ApiBearerAuth()
   @UseGuards(AuthGuard)
   async checkAuth(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
     return await this.authService.checkAuth(request, response);

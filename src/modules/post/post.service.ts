@@ -122,8 +122,8 @@ export class PostService {
         message: 'Post created',
         data: postCreated,
       };
-    } catch {
-      throw new HttpException('Post not created', 400);
+    } catch (error) {
+      throw new HttpException((error as Error).message, 404);
     }
   }
 

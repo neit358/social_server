@@ -37,6 +37,10 @@ export default class BaseAbstractRepository<T extends ObjectLiteral & HasId>
 
     const response = await this.entity.findOneBy(options);
 
+    if (!response) {
+      throw new Error('User not found');
+    }
+
     await this.redisService.set(options.id, JSON.stringify(response));
 
     return response;

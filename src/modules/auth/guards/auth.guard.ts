@@ -34,7 +34,9 @@ export class AuthGuard implements CanActivate {
 
   validateRequest(request: Request): boolean {
     try {
-      const accessToken = request.cookies['accessToken'] as string;
+      const accessToken =
+        (request.cookies['accessToken'] as string).trim() ||
+        request.headers['authorization']?.replace('Bearer ', '').trim();
       if (!accessToken) {
         return false;
       }

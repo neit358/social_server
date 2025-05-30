@@ -13,7 +13,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 
 import { UserService } from './user.service';
 import { UpdatePasswordUserDto, UpdateUserDto } from './dto';
-import { ApiBody, ApiConsumes } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/guards/auth.guard';
 
 @Controller('user')
@@ -42,6 +42,7 @@ export class UserController {
     type: UpdateUserDto,
   })
   @UseInterceptors(FileInterceptor('avatar'))
+  @ApiBearerAuth()
   @UseGuards(AuthGuard)
   async updateUserCtr(
     @Param('id') id: string,
@@ -53,12 +54,14 @@ export class UserController {
   }
 
   @Delete('delete/:id')
+  @ApiBearerAuth()
   @UseGuards(AuthGuard)
   async deleteUserCtr(@Param('id') id: string) {
     return await this.userService.deleteUser(id);
   }
 
   @Patch('update-password/:id')
+  @ApiBearerAuth()
   @UseGuards(AuthGuard)
   async updatePasswordCtr(@Param('id') id: string, @Body() data: UpdatePasswordUserDto) {
     return await this.userService.updatePasswordCtr(id, data);

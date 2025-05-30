@@ -1,3 +1,4 @@
+import { Role } from 'src/guards/role/role.enum';
 import { Like } from '../../like/entities/like.entity';
 import { Post } from '../../post/entities/post.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
@@ -18,6 +19,13 @@ export class User {
 
   @Column()
   password: string;
+
+  @Column({
+    type: 'enum',
+    enum: Role,
+    default: Role.User,
+  })
+  role: Role;
 
   @OneToMany(() => Post, (post) => post.user)
   posts: Post[];
