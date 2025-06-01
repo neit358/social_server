@@ -6,8 +6,6 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 import * as express from 'express';
 // import { otelSDK } from './tracing';
-import * as dotenv from 'dotenv';
-dotenv.config();
 
 async function bootstrap() {
   // otelSDK.start();
