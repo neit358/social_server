@@ -48,6 +48,6 @@ async function bootstrap() {
   app.use(express.json({ limit: '2gb' }));
   app.use(express.urlencoded({ extended: true, limit: '2gb' }));
 
-  await app.listen(process.env.PORT || 3001);
+  await app.listen(process.env.PORT ?? 3001);
 }
 bootstrap();
