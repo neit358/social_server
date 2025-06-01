@@ -1,5 +1,5 @@
-// import { ClientGrpc } from '@nestjs/microservices';
-import { Injectable, HttpException, /*Inject,*/ Logger } from '@nestjs/common';
+import { ClientGrpc } from '@nestjs/microservices';
+import { Injectable, HttpException, Inject, Logger } from '@nestjs/common';
 
 import { User } from './entities/user.entity';
 import { UserRepository } from './user.repository';
@@ -18,12 +18,12 @@ export class UserService {
   private heroesService: HeroesService;
   constructor(
     private readonly userRepository: UserRepository,
-    // @Inject('HERO_SERVICE') private client: ClientGrpc,
+    @Inject('HERO_SERVICE') private client: ClientGrpc,
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly logger: Logger,
     // @InjectQueue('user') private readonly userQueue: Queue,
   ) {
-    // this.heroesService = this.client.getService<HeroesService>('HeroesService');
+    this.heroesService = this.client.getService<HeroesService>('HeroesService');
   }
 
   async findUserById(id: string): Promise<I_Base_Response<User>> {
