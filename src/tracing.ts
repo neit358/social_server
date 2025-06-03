@@ -8,7 +8,7 @@ import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
 
 const jaegerExporter = new JaegerExporter({
-  endpoint: 'http://localhost:14268/api/traces',
+  endpoint: `${process.env.JAEGER_TRACES}/api/traces`,
 });
 
 const traceExporter = jaegerExporter;

@@ -8,8 +8,8 @@ import { I_Base_Response } from '../../interfaces/response.interfaces';
 import { I_UpdatePost } from './interfaces/create.interface';
 import { User } from '../user/entities/user.entity';
 import { SearchService } from '../../services/elasticsearch.service';
-// import { BeanstalkdTube } from '../../provider/constant/beanstalkd.enum';
-// import { BeanstalkdProvider } from '../../provider/beanstalkd/beanstalkd.provider';
+import { BeanstalkdTube } from '../../provider/constant/beanstalkd.enum';
+import { BeanstalkdProvider } from '../../provider/beanstalkd/beanstalkd.provider';
 
 @Injectable()
 export class PostService {
@@ -17,7 +17,7 @@ export class PostService {
     private readonly postRepository: PostRepository,
     private readonly userService: UserService,
     private readonly elasticsearchService: SearchService<Post>,
-    // private readonly beanstalkdProvider: BeanstalkdProvider,
+    private readonly beanstalkdProvider: BeanstalkdProvider,
   ) {}
 
   index = 'social.posts.dev';
@@ -29,7 +29,7 @@ export class PostService {
       });
       if (!post) throw new HttpException('Post not found', 404);
 
-      // await this.beanstalkdProvider.produce(BeanstalkdTube.base, post);
+      await this.beanstalkdProvider.produce(BeanstalkdTube.base, post);
 
       return {
         statusCode: 200,

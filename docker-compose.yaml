@@ -1,24 +1,37 @@
 services:
   app:
-    image: node:20-alpine
-    command: sh -c "npm install && npm run start"
-    container_name: server_social
+    # image: node:20-alpine
+    # command: sh -c "npm install && npm run start"
+    # build: # Neu khong dung build thi thay bang image: social_server neu image da co san
+    #   context: .
+    #   dockerfile: Dockerfile
+    image: social_server_app:latest
+    container_name: social_server
     ports:
       - '3001:3001'
-    working_dir: /app
-    volumes:
-      - ./.:/app
+    # working_dir: /app
+    # volumes:
+    #   - ./.:/app
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: social_db
-      REDIS_URL: redis://redis_cache:6379
       REDIS_HOST: redis_cache
       REDIS_PORT: 6379
+      REDIS_URL: redis://redis_cache:6379
       BEANSTALKD_HOST: beanstalkd
       BEANSTALKD_PORT: 11300
+      ELASTICSEARCH_NODE: http://elasticsearch:9200
+      JWT_SECRET: jwt_secret
+      JWT_ACCESS_TOKEN: jwt_access_token
+      JWT_REFRESH_TOKEN: jwt_refresh_token
+      NODE_ENV: development
+      CLIENT_URL: http://localhost:3000
+      MICROSERVICE_PORT: 3000
+      SOCKET_URL: http://localhost:3002
+      JAEGER_TRACES: http://localhost:14268
     depends_on:
       - postgres
       - redis_cache
@@ -26,6 +39,8 @@ services:
       - kibana
       - beanstalkd
       - jaeger
+    networks:
+      - social_network
 
   postgres:
     image: postgres:latest
@@ -38,6 +53,8 @@ services:
       POSTGRES_DB: social_db
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - social_network
 
   redis_cache:
     image: redis:latest
@@ -47,15 +64,18 @@ services:
       - '6379:6379'
     volumes:
       - 'cache:/data'
+    networks:
+      - social_network
 
   elasticsearch:
-    image: bashell/alpine-elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.11.0
     container_name: social_elasticsearch
     environment:
       - node.name=social_node
       - cluster.name=social_cluster
-      - bootstrap.memory_lock=true
       - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
     ulimits:
       memlock:
         soft: -1
@@ -64,14 +84,18 @@ services:
       - '9200:9200'
     volumes:
       - esdata:/usr/share/elasticsearch/data
+    networks:
+      - social_network
 
   kibana:
-    image: blacktop/kibana
+    image: docker.elastic.co/kibana/kibana:7.11.0
     container_name: social_kibana
     ports:
       - '5601:5601'
     depends_on:
       - elasticsearch
+    networks:
+      - social_network
 
   beanstalkd:
     image: schickling/beanstalkd
@@ -79,7 +103,9 @@ services:
     ports:
       - '11300:11300'
     volumes:
-      - beanstalkd_data:/var/lib/beanstald
+      - beanstalkd_data:/var/lib/beanstalkd
+    networks:
+      - social_network
 
   jaeger:
     image: jaegertracing/jaeger:2.0.0
@@ -92,6 +118,8 @@ services:
       - '5778:5778' # config for agents
     environment:
       - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+    networks:
+      - social_network
 
 volumes:
   pgdata:
@@ -102,3 +130,7 @@ volumes:
     driver: local
   beanstalkd_data:
     driver: local
+
+networks:
+  social_network:
+    driver: bridge

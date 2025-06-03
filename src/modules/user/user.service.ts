@@ -1,5 +1,9 @@
+import { Queue } from 'bullmq';
+// import { CronTime } from 'cron';
+import { InjectQueue } from '@nestjs/bullmq';
 import { ClientGrpc } from '@nestjs/microservices';
 import { Injectable, HttpException, Inject, Logger } from '@nestjs/common';
+import { /*Cron, CronExpression, Interval, Timeout,*/ SchedulerRegistry } from '@nestjs/schedule';
 
 import { User } from './entities/user.entity';
 import { UserRepository } from './user.repository';
@@ -8,10 +12,6 @@ import { omit } from 'lodash';
 import { I_Base_Response } from 'src/interfaces/response.interfaces';
 import { lastValueFrom } from 'rxjs';
 import { Hero, HeroById, HeroesService } from './interfaces/hero.interface';
-import { /*Cron, CronExpression, Interval,*/ SchedulerRegistry, Timeout } from '@nestjs/schedule';
-// import { CronTime } from 'cron';
-// import { InjectQueue } from '@nestjs/bullmq';
-// import { Queue } from 'bullmq';
 
 @Injectable()
 export class UserService {
@@ -19,9 +19,9 @@ export class UserService {
   constructor(
     private readonly userRepository: UserRepository,
     @Inject('HERO_SERVICE') private client: ClientGrpc,
-    private readonly schedulerRegistry: SchedulerRegistry,
     private readonly logger: Logger,
-    // @InjectQueue('user') private readonly userQueue: Queue,
+    private readonly schedulerRegistry: SchedulerRegistry,
+    @InjectQueue('user') private readonly userQueue: Queue,
   ) {
     this.heroesService = this.client.getService<HeroesService>('HeroesService');
   }
@@ -166,43 +166,43 @@ export class UserService {
   // }
 
   // @Interval('notifications', 2500) // Every 2.5 seconds
-  @Timeout('notifications', 5000) // To 5 seconds
-  async scheduleGetData(): Promise<Partial<I_Base_Response>> {
-    try {
-      // console.log('Timeout job for notifications triggered at:', new Date().toISOString());
-      // await this.userQueue.add(
-      //   'example-job',
-      //   {
-      //     foo: 'bar',
-      //   },
-      //   { delay: 3000 },
-      // );
-      // console.log('Timeout job for notifications triggered at:', new Date().toISOString());
-      // this.addInterval('listUser', 5000);
-      // setTimeout(() => {
-      //   this.clearInterval('listUser');
-      // }, 15000);
-      // const job = this.schedulerRegistry.getCronJob('notifications');
-      // job.setTime(new CronTime('*/4 * * * * *')); // mỗi 15 giây
-      const Users = await this.findUsers();
-      if (!Users) throw new HttpException('Users not found', 404);
-      return {
-        statusCode: 200,
-        message: 'Get data successfully',
-      };
-    } catch (error) {
-      throw new HttpException((error as Error).message, 404);
-    }
-  }
+  // @Timeout('notifications', 5000) // To 5 seconds
+  // async scheduleGetData(): Promise<Partial<I_Base_Response>> {
+  //   try {
+  //     console.log('Timeout job for notifications triggered at:', new Date().toISOString());
+  //     await this.userQueue.add(
+  //       'example-job',
+  //       {
+  //         foo: 'bar',
+  //       },
+  //       { delay: 3000 },
+  //     );
+  //     console.log('Timeout job for notifications triggered at:', new Date().toISOString());
+  //     this.addInterval('listUser', 5000);
+  //     setTimeout(() => {
+  //       this.clearInterval('listUser');
+  //     }, 15000);
+  //     const job = this.schedulerRegistry.getCronJob('notifications');
+  //     job.setTime(new CronTime('*/4 * * * * *')); // mỗi 15 giây
+  //     const Users = await this.findUsers();
+  //     if (!Users) throw new HttpException('Users not found', 404);
+  //     return {
+  //       statusCode: 200,
+  //       message: 'Get data successfully',
+  //     };
+  //   } catch (error) {
+  //     throw new HttpException((error as Error).message, 404);
+  //   }
+  // }
 
-  addTimeout(name: string, milliseconds: number) {
-    const callback = () => {
-      this.logger.warn(`Timeout ${name} executing after (${milliseconds})!`);
-    };
+  // addTimeout(name: string, milliseconds: number) {
+  //   const callback = () => {
+  //     this.logger.warn(`Timeout ${name} executing after (${milliseconds})!`);
+  //   };
 
-    const timeout = setTimeout(callback, milliseconds);
-    this.schedulerRegistry.addTimeout(name, timeout);
-  }
+  //   const timeout = setTimeout(callback, milliseconds);
+  //   this.schedulerRegistry.addTimeout(name, timeout);
+  // }
 
   // clearTimeout(name: string) {
   //   console.log(`Clearing timeout: ${name}`);
