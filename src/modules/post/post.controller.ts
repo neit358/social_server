@@ -33,14 +33,14 @@ import { PermissionGuard } from 'src/guards/permission/permission.guard';
 export class PostController {
   constructor(private readonly postService: PostService) {}
 
-  @Get('')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard, RolesGuard)
-  @Roles(Role.Admin, Role.User)
-  // @UseInterceptors(CommonInterceptor)
-  async getPostsCtr() {
-    return await this.postService.findPosts();
-  }
+  // @Get('')
+  // @ApiBearerAuth()
+  // @UseGuards(AuthGuard, RolesGuard)
+  // @Roles(Role.Admin, Role.User)
+  // // @UseInterceptors(CommonInterceptor)
+  // async getPostsCtr() {
+  //   return await this.postService.findPosts();
+  // }
 
   @Get(':id')
   // @UsePipes(CommonPipe)
