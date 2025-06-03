@@ -43,9 +43,9 @@ jobs:
     - name: Deploy using ssh
       uses: appleboy/ssh-action@master
       with: 
-        host: ${{ secrets.HOST_SSH }}
-        username: ${{ secrets.USERNAME_SSH }}
-        password: ${{ secrets.PASSWORD_SSH }}
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        password: ${{ secrets.SSH_PASSWORD }}
         port: 22
         script: |
           cd /home/dinhtien 
